@@ -3,13 +3,13 @@ import numpy as np
 
 class Blur:
 
-    def BlurFilter(self, image, mask, str, background, apply):
+    def BlurFilter(self, baseImage, mask, imagePath, str, background, apply):
         if (apply):
-            blur = cv2.blur(image, (str, str))
+            blur = cv2.blur(baseImage, (str, str))
             if background:
-                blur = np.where(mask.maskTrueFalse == False, blur, image)
+                blur = np.where(mask.maskTrueFalse == False, blur, baseImage)
             else:
-                blur = np.where(mask.maskTrueFalse == True, blur, image)
-            cv2.imwrite('images/edit.png', blur)
+                blur = np.where(mask.maskTrueFalse == True, blur, baseImage)
+            cv2.imwrite(imagePath + 'p6_maskedit.png', blur)
         else:
-            cv2.imwrite('images/edit.png', image)
+            cv2.imwrite(imagePath + 'p6_maskedit.png', baseImage)

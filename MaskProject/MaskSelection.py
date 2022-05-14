@@ -1,5 +1,5 @@
 import numpy as np
-import maskData.ClassDict
+import ClassDict
 from Mask import Mask
 from MaskGroup import MaskGroup
 
@@ -11,14 +11,14 @@ class MaskSelection:
         self.classList = []
         self.uniqueClasses = []
 
-    def DetectMasks(self):
+    def DetectMasks(self, imagePath):
 
-        mask_array = np.load('maskData/Image_mask.npy')
-        class_array = np.load('maskData/class_array.npy')
+        mask_array = np.load(imagePath + 'Image_mask.npy')
+        class_array = np.load(imagePath + 'class_array.npy')
         num_instances = mask_array.shape[0]
         mask_array = np.moveaxis(mask_array, 0, -1)
 
-        classDict = maskData.ClassDict
+        classDict = ClassDict
 
         for i in range(num_instances):
             j = class_array[i] + 1

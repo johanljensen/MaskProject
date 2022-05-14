@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import random
@@ -51,18 +52,6 @@ class MaskUI:
         #self.labelmathpixmap.setPixmap(self.mathpixmap)
         self.window.update()
 
-    def updateWindow(self):
-        print("updating window")
-        #self.pixmap = QPixmap('edit.png')
-        print("set to imagelabels")
-        for i in self.imageLabel:
-            i.setPixmap(self.pixmap)
-        print("success")
-        #self.current_edit = cv2.imread("edit.png")
-        #self.cvimageNoBlur = cv2.imread('noBlur.png')
-        self.window.update()
-        print("updated window")
-
     def UpdateCurveToolWindow(self):
         print("update CurveTool Window")
 
@@ -74,9 +63,19 @@ class MaskUI:
 
         window = QWidget()
         mainImage = QLabel()
-        mainPixmap = QPixmap('images/img.jpg')
-        mainImage.setPixmap(mainPixmap)
-        self.maskManager = MaskManager(mainImage)
+        self.maskManager = MaskManager()
+
+        labelImageSelect = QLabel("Select image to edit")
+        dropdownImages = QComboBox()
+        imageFolderNames = [f.name for f in os.scandir("imageData") if f.is_dir()]
+        dropdownImages.addItems(imageFolderNames)
+        dropdownImages.setCurrentText("Royal Guard")
+
+        imageDisplayLayout = QVBoxLayout()
+        imageDisplayLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        imageDisplayLayout.addWidget(labelImageSelect)
+        imageDisplayLayout.addWidget(dropdownImages)
+        imageDisplayLayout.addWidget(mainImage)
 
         maskSelectLayout = QVBoxLayout()
         simpleEditLayout = QVBoxLayout()
@@ -86,28 +85,19 @@ class MaskUI:
         tabWindow = QTabWidget()
         tabWindow.currentChanged.connect(self.TabSwitch)
 
-
         #TAB 1 - MASK SELECTION
         tabMaskSelect = QWidget()
 
         labelInstance = QLabel("Instance Selection")
         dropdownInstances = QComboBox()
-        for mask in self.maskManager.maskList:
-            dropdownInstances.addItem(mask.maskName)
-        dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
-
         labelClasses = QLabel("Classes")
         dropdownClasses = QComboBox()
-        for mask in self.maskManager.classList:
-            dropdownClasses.addItem(mask.groupName)
-        dropdownClasses.activated.connect(self.maskManager.ClassSelect)
 
         maskSelectLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         maskSelectLayout.addWidget(labelInstance)
         maskSelectLayout.addWidget(dropdownInstances)
         maskSelectLayout.addWidget(labelClasses)
         maskSelectLayout.addWidget(dropdownClasses)
-
 
         #TAB 2 - SIMPLE EDITS
         tabSimpleEdit = QWidget()
@@ -118,9 +108,7 @@ class MaskUI:
         self.sliderBrightness.setMaximum(255)
         self.sliderBrightness.setSliderPosition(0)
         labelBrightSlider = QLabel(str(self.sliderBrightness.value()))
-        self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
-        self.sliderBrightness.sliderReleased.connect(self.maskManager.BrightnessChangeForce)
-        self.sliderBrightness.valueChanged.connect(lambda: labelBrightSlider.setText(str(self.sliderBrightness.value())))
+
         layoutBrightness = QHBoxLayout()
         layoutBrightness.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layoutBrightness.addWidget(labelBrightness)
@@ -132,9 +120,7 @@ class MaskUI:
         self.sliderSaturation.setMaximum(255)
         self.sliderSaturation.setSliderPosition(0)
         labelSatSlider = QLabel(str(self.sliderSaturation.value()))
-        self.sliderSaturation.valueChanged.connect(self.maskManager.SaturationChange)
-        self.sliderSaturation.sliderReleased.connect(self.maskManager.SaturationChangeForce)
-        self.sliderSaturation.valueChanged.connect(lambda: labelSatSlider.setText(str(self.sliderSaturation.value())))
+
         layoutSaturation = QHBoxLayout()
         layoutSaturation.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layoutSaturation.addWidget(labelSaturation)
@@ -146,8 +132,6 @@ class MaskUI:
         simpleEditLayout.addLayout(layoutSaturation)
         simpleEditLayout.addWidget(labelSatSlider)
         simpleEditLayout.addWidget(self.sliderSaturation)
-
-
 
         #TAB 3 - CURVE TOOL
         tabCurveTool = QWidget()
@@ -170,20 +154,12 @@ class MaskUI:
         lineEditLayout3.addWidget(lineEditLabel3)
         lineEditLayout3.addWidget(lineEditValue3)
 
-        lineEditValue1.editingFinished.connect(lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(), lineEditValue3.text()))
-        lineEditValue2.editingFinished.connect(lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(), lineEditValue3.text()))
-        lineEditValue3.editingFinished.connect(lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(), lineEditValue3.text()))
-        lineEditValue1.editingFinished.connect(self.UpdateCurveToolWindow)
-        lineEditValue2.editingFinished.connect(self.UpdateCurveToolWindow)
-        lineEditValue3.editingFinished.connect(self.UpdateCurveToolWindow)
-
         curveToolImage = QLabel()
-        curveToolPixmap = QPixmap('images/plot.png')
+        curveToolPixmap = QPixmap('imageData/plot.png')
         curveToolImage.setPixmap(curveToolPixmap)
 
         curveUpdateBtn = QPushButton("Update Curve")
         curveUpdateBtn.clicked.connect(self.UpdateCurve)
-
         colorChannelSelect = QComboBox()
         colorChannelSelect.addItems(["Red", "Green", "Blue"])
 
@@ -194,7 +170,6 @@ class MaskUI:
         curveToolLayout.addWidget(curveUpdateBtn)
         curveToolLayout.addWidget(colorChannelSelect)
 
-
         #TAB 4 - BLUR FILTER
         tabBlur = QWidget()
 
@@ -204,7 +179,6 @@ class MaskUI:
         applyBackgroundLayout.addWidget(applyBackgroundLabel)
         applyBackgroundLayout.addWidget(applyBackgroundCheck)
         applyBackgroundLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        applyBackgroundCheck.stateChanged.connect(self.maskManager.ToggleBlurBackground)
 
         applyFilterLabel = QLabel("Apply Filter")
         applyFilterCheck = QCheckBox()
@@ -212,13 +186,11 @@ class MaskUI:
         applyFilterLayout.addWidget(applyFilterLabel)
         applyFilterLayout.addWidget(applyFilterCheck)
         applyFilterLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        applyFilterCheck.stateChanged.connect(self.maskManager.ToggleBlurFilter)
 
         blurIntensityLabel = QLabel("Blur Intensity")
         blurIntensitySlider = QSlider(Qt.Orientation.Horizontal)
         blurIntensitySlider.setMinimum(1)
         blurIntensitySlider.setMaximum(10)
-        blurIntensitySlider.valueChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
         blurLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         blurLayout.addLayout(applyBackgroundLayout)
@@ -240,8 +212,47 @@ class MaskUI:
         tabWindow.addTab(tabCurveTool, "Curve Tool")
         tabWindow.addTab(tabBlur, "Blur")
 
-        mainLayout.addWidget(mainImage)
+        mainLayout.addLayout(imageDisplayLayout)
         mainLayout.addWidget(tabWindow)
+
+
+        #SET FUNCTIONALITY
+
+        dropdownImages.currentTextChanged.connect(self.maskManager.ImageSelect)
+        dropdownImages.currentIndexChanged.connect(lambda: tabWindow.setCurrentIndex(0))
+
+        dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
+        dropdownClasses.activated.connect(self.maskManager.ClassSelect)
+
+        self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
+        self.sliderBrightness.sliderReleased.connect(self.maskManager.BrightnessChangeForce)
+        self.sliderBrightness.valueChanged.connect(
+            lambda: labelBrightSlider.setText(str(self.sliderBrightness.value())))
+
+        self.sliderSaturation.valueChanged.connect(self.maskManager.SaturationChange)
+        self.sliderSaturation.sliderReleased.connect(self.maskManager.SaturationChangeForce)
+        self.sliderSaturation.valueChanged.connect(lambda: labelSatSlider.setText(str(self.sliderSaturation.value())))
+
+        lineEditValue1.editingFinished.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
+                                                     lineEditValue3.text()))
+        lineEditValue2.editingFinished.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
+                                                     lineEditValue3.text()))
+        lineEditValue3.editingFinished.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
+                                                     lineEditValue3.text()))
+        lineEditValue1.editingFinished.connect(self.UpdateCurveToolWindow)
+        lineEditValue2.editingFinished.connect(self.UpdateCurveToolWindow)
+        lineEditValue3.editingFinished.connect(self.UpdateCurveToolWindow)
+
+        applyBackgroundCheck.stateChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+        applyFilterCheck.stateChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+        blurIntensitySlider.valueChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+
+
+        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses)
+        self.maskManager.ImageSelect(dropdownImages.currentText())
 
 
         window.setWindowTitle("Mask Manager")
