@@ -30,7 +30,7 @@ class MaskManager:
         self.maskList, self.classList = MaskSelection().DetectMasks(self.imagePath)
         self.groupList = []
 
-        self.selectedMask = self.maskList[0]
+        self.selectedMask = None
         self.selectedIsGroup = False
 
         self.drawTimer = timeit.default_timer()
@@ -50,6 +50,8 @@ class MaskManager:
         self.classDropdown.clear()
         for maskClass in self.classList:
             self.classDropdown.addItem(maskClass.groupName)
+
+        self.selectedMask = self.maskList[0]
 
     def ImageSelect(self, imageName):
         print("Switched to image: " + imageName)
