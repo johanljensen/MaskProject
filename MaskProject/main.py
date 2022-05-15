@@ -47,8 +47,6 @@ class MaskUI:
     def UpdateCurveToolWindow(self):
         print("update CurveTool Window")
 
-    def UpdateCurve(self):
-        print("update curve")
 
     def BuildUI(self):
         app = QApplication(sys.argv)
@@ -133,19 +131,25 @@ class MaskUI:
         tabCurveTool = QWidget()
 
         lineEditLabel1 = QLabel("Value 1")
-        lineEditValue1 = QLineEdit()
+        lineEditValue1 = QSlider(Qt.Orientation.Horizontal)
+        lineEditValue1.setMinimum(-10)
+        lineEditValue1.setMaximum(10)
         lineEditLayout1 = QHBoxLayout()
         lineEditLayout1.addWidget(lineEditLabel1)
         lineEditLayout1.addWidget(lineEditValue1)
 
         lineEditLabel2 = QLabel("Value 2")
-        lineEditValue2 = QLineEdit()
+        lineEditValue2 = QSlider(Qt.Orientation.Horizontal)
+        lineEditValue2.setMinimum(-10)
+        lineEditValue2.setMaximum(10)
         lineEditLayout2 = QHBoxLayout()
         lineEditLayout2.addWidget(lineEditLabel2)
         lineEditLayout2.addWidget(lineEditValue2)
 
         lineEditLabel3 = QLabel("Value 3")
-        lineEditValue3 = QLineEdit()
+        lineEditValue3 = QSlider(Qt.Orientation.Horizontal)
+        lineEditValue3.setMinimum(-10)
+        lineEditValue3.setMaximum(10)
         lineEditLayout3 = QHBoxLayout()
         lineEditLayout3.addWidget(lineEditLabel3)
         lineEditLayout3.addWidget(lineEditValue3)
@@ -154,16 +158,13 @@ class MaskUI:
         curveToolPixmap = QPixmap('imageData/plot.png')
         curveToolImage.setPixmap(curveToolPixmap)
 
-        curveUpdateBtn = QPushButton("Update Curve")
-        curveUpdateBtn.clicked.connect(self.UpdateCurve)
         colorChannelSelect = QComboBox()
-        colorChannelSelect.addItems(["Red", "Green", "Blue"])
+        colorChannelSelect.addItems(["Red", "Green", "Blue", "All"])
 
         curveToolLayout.addLayout(lineEditLayout1)
         curveToolLayout.addLayout(lineEditLayout2)
         curveToolLayout.addLayout(lineEditLayout3)
         curveToolLayout.addWidget(curveToolImage)
-        curveToolLayout.addWidget(curveUpdateBtn)
         curveToolLayout.addWidget(colorChannelSelect)
 
         #TAB 4 - BLUR FILTER
@@ -234,22 +235,31 @@ class MaskUI:
         self.sliderSaturation.sliderReleased.connect(self.maskManager.SaturationChangeForce)
         self.sliderSaturation.valueChanged.connect(lambda: labelSatSlider.setText(str(self.sliderSaturation.value())))
 
-        lineEditValue1.editingFinished.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
-                                                     lineEditValue3.text()))
-        lineEditValue2.editingFinished.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
-                                                     lineEditValue3.text()))
-        lineEditValue3.editingFinished.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.text(), lineEditValue2.text(),
-                                                     lineEditValue3.text()))
-        lineEditValue1.editingFinished.connect(self.UpdateCurveToolWindow)
-        lineEditValue2.editingFinished.connect(self.UpdateCurveToolWindow)
-        lineEditValue3.editingFinished.connect(self.UpdateCurveToolWindow)
+        lineEditValue1.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
+                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
+        lineEditValue2.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
+                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
+        lineEditValue3.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
+                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
+        lineEditValue1.valueChanged.connect(self.UpdateCurveToolWindow)
+        lineEditValue2.valueChanged.connect(self.UpdateCurveToolWindow)
+        lineEditValue3.valueChanged.connect(self.UpdateCurveToolWindow)
+        colorChannelSelect.currentIndexChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
+                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
 
-        applyBackgroundCheck.stateChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
-        applyFilterCheck.stateChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
-        blurIntensitySlider.valueChanged.connect(lambda: self.maskManager.BlurChange(blurIntensitySlider.value(), applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+        applyBackgroundCheck.stateChanged.connect(
+            lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
+                                                applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+        applyFilterCheck.stateChanged.connect(
+            lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
+                                                applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
+        blurIntensitySlider.valueChanged.connect(
+            lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
+                                                applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
 
         self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses)

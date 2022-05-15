@@ -177,6 +177,40 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = mergedImg
 
+    def DrawMaskWithCurveTool(self, mask):
+        drawingImg = cv2.imread("imageData/" + self.selectedImage.imageName + "/curve.png")[mask.minX:mask.maxX,
+                     mask.minY:mask.maxY]
+        if not drawingImg.any():
+            drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
+
+        groupSettings = []
+        for cMask in self.selectedImage.classList:
+            if cMask.maskList.__contains__(mask):
+                groupSettings.append(cMask.maskSettings)
+
+        for gMask in self.selectedImage.groupList:
+            if gMask.maskList.__contains__(mask):
+                groupSettings.append(gMask.maskSettings)
+
+        totalBrightness = mask.maskSettings.brightness
+        totalSaturation = mask.maskSettings.saturation
+
+        for settings in groupSettings:
+            totalBrightness += settings.brightness
+            totalSaturation += settings.saturation
+
+        drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
+        drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
+
+        blankImg = self.baseGraphic.copy()
+        blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
+        mergedImg = np.where(mask.maskTrueFalse == True, blankImg, self.selectedImage.currentGraphic)
+
+        cv2.imwrite(self.imageFullPath + self.editFilename, mergedImg)
+        pixmap = QPixmap(self.imageFullPath + self.editFilename)
+        self.displayGraphicLabel.setPixmap(pixmap)
+        self.selectedImage.currentGraphic = mergedImg
+
     def DrawSelectedMask(self):
         if self.selectedIsGroup:
             for mask in self.selectedMask.maskList:
@@ -237,11 +271,13 @@ class MaskManager:
     def getCurrentSaturation(self):
         return self.selectedMask.maskSettings.saturation
 
-    def UpdateCurveTool(self, value1, value2, value3):
-        print("update curvetool")
+    def UpdateCurveTool(self, value1, value2, value3, colorChannel):
+        self.curveTool.sliderChange(value1, value2, value3, colorChannel,
+                                    self.selectedMask, self.selectedImage)
 
     def BlurChange(self, blurValue, backgroundState, filterState):
-        blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask, self.imageFullPath, blurValue, backgroundState, filterState)
+        blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,
+                                         self.imageFullPath, blurValue, backgroundState, filterState)
 
         if blurImage is not None:
             cv2.imwrite(self.imageFullPath + self.blurFilename, blurImage)
