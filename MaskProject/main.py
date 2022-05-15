@@ -45,7 +45,8 @@ class MaskUI:
         self.window.update()
 
     def UpdateCurveToolWindow(self):
-        print("update CurveTool Window")
+        curveToolPixmap = QPixmap('imageData/plot.png')
+        self.curveToolImage.setPixmap(curveToolPixmap)
 
 
     def BuildUI(self):
@@ -64,13 +65,18 @@ class MaskUI:
 
         self.outlineToggle = QCheckBox()
         self.outlineToggle.setChecked(False)
+        outlineText = QLabel("Show mask outlines")
+        outlineLayout = QHBoxLayout()
+        outlineLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        outlineLayout.addWidget(self.outlineToggle)
+        outlineLayout.addWidget(outlineText)
 
         imageDisplayLayout = QVBoxLayout()
         imageDisplayLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         imageDisplayLayout.addWidget(labelImageSelect)
         imageDisplayLayout.addWidget(dropdownImages)
         imageDisplayLayout.addWidget(mainImage)
-        imageDisplayLayout.addWidget(self.outlineToggle)
+        imageDisplayLayout.addLayout(outlineLayout)
 
         maskSelectLayout = QVBoxLayout()
         simpleEditLayout = QVBoxLayout()
@@ -154,18 +160,18 @@ class MaskUI:
         lineEditLayout3.addWidget(lineEditLabel3)
         lineEditLayout3.addWidget(lineEditValue3)
 
-        curveToolImage = QLabel()
-        curveToolPixmap = QPixmap('imageData/plot.png')
-        curveToolImage.setPixmap(curveToolPixmap)
-
         colorChannelSelect = QComboBox()
-        colorChannelSelect.addItems(["Red", "Green", "Blue", "All"])
+        colorChannelSelect.addItems(["All", "Red", "Green", "Blue"])
+
+        self.curveToolImage = QLabel()
+        curveToolPixmap = QPixmap('imageData/plot.png')
+        self.curveToolImage.setPixmap(curveToolPixmap)
 
         curveToolLayout.addLayout(lineEditLayout1)
         curveToolLayout.addLayout(lineEditLayout2)
         curveToolLayout.addLayout(lineEditLayout3)
-        curveToolLayout.addWidget(curveToolImage)
         curveToolLayout.addWidget(colorChannelSelect)
+        curveToolLayout.addWidget(self.curveToolImage)
 
         #TAB 4 - BLUR FILTER
         tabBlur = QWidget()

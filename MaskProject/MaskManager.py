@@ -112,6 +112,7 @@ class MaskManager:
     def ReDrawCurrentImage(self):
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
+        print(self.showOutline)
         if self.showOutline is True:
             self.ShowOutline()
 
@@ -220,35 +221,24 @@ class MaskManager:
             self.DrawMask(self.selectedMask)
             print("completed drawing")
 
-        self.ShowOutline()
+        if self.showOutline is True:
+            self.ShowOutline()
 
     def ShowOutline(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
-        kernel = np.ones((3, 3), np.uint8)
-
+        
         for mask in self.selectedMask.getMasks():
             converted = mask.maskBlackWhite.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=5)
+            cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
 
         outlines = np.where(outlines > 1, outlines, self.selectedImage.currentGraphic)
         cv2.imwrite(self.imageFullPath + self.outlineFilename, outlines)
         outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
         self.displayGraphicLabel.setPixmap(outlinePixmap)
 
-    def ShowOutlineNo(self):
-        outline = 0
-        kernel = np.ones((3, 3), np.uint8)
-        for k in self.selectedMask.getMasks():
-            kimg = k.maskBlackWhite.astype('uint8')
-            outlines = cv2.morphologyEx(kimg, cv2.MORPH_GRADIENT, kernel)
-            outlines = np.where(outlines >= 1,
-                                (random.randrange(1, 255), random.randrange(1, 255), random.randrange(1, 255)), 0)
-            outline += outlines
-        outline = np.where(outline >= 1, outline, self.cvimage).astype(np.uint8)
-        cv2.imshow('outline', outline)
-
-    def ShowOutlineToggle(self, toggle):
+    def ShowOutlineToggle(self):
+        print("Toggle show outline")
         self.showOutline = not self.showOutline
         self.ReDrawCurrentImage()
     def BrightnessChange(self, sliderValue):
@@ -274,6 +264,16 @@ class MaskManager:
     def UpdateCurveTool(self, value1, value2, value3, colorChannel):
         self.curveTool.sliderChange(value1, value2, value3, colorChannel,
                                     self.selectedMask, self.selectedImage)
+        if self.selectedIsGroup:
+            for mask in self.selectedMask.maskList:
+                self.DrawMaskWithCurveTool(mask)
+        else:
+            print("started drawing")
+            self.DrawMaskWithCurveTool(self.selectedMask)
+            print("completed drawing")
+
+        if self.showOutline is True:
+            self.ShowOutline()
 
     def BlurChange(self, blurValue, backgroundState, filterState):
         blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,

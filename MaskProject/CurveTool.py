@@ -36,4 +36,3 @@ class CurveTool:
             return
         newImg = cv2.merge((b, g, r))
         cv2.imwrite("imageData/" + image.imageName + "/curve.png", newImg)
-        cv2.imshow("curve", newImg)
