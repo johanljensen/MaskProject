@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import ClassDict
 from Mask import Mask
@@ -25,8 +26,9 @@ class MaskSelection:
 
             maskName = "" + str(i) + " - " + classDict.coco_dict[j]
             maskTrueFalse = mask_array[:, :, i:(i + 1)]
-            maskBlackWhite = np.zeros_like(mask_array)
+            maskBlackWhite = np.zeros_like(maskTrueFalse, dtype=np.uint8)
             maskBlackWhite = np.where(maskTrueFalse == True, 255, maskBlackWhite)
+
             self.maskList.append(Mask(maskTrueFalse, maskBlackWhite, maskName, classDict.coco_dict[j]))
             #cv2.imshow("hey:" + str(i), maskBlackWhite)
 

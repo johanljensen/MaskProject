@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import timeit
+import random
 from PyQt5.QtGui import QPixmap
 
 from LoadedImage import LoadedImage
@@ -18,6 +19,8 @@ class MaskManager:
         self.imageBasePath = 'imageData/'
         self.inputFilename = '/input.jpg'
         self.editFilename = '/p6_mask_edit.png'
+        self.blurFilename = '/p6_blur_edit.png'
+        self.outlineFilename = '/p6_outline_edit.png'
 
         self.baseGraphic = None
 
@@ -31,9 +34,11 @@ class MaskManager:
         self.blur = Blur()
 
         self.loadedImages = []
+        self.selectedMask = None
         self.selectedImage = None
         self.selectedIsGroup = False
 
+        self.showOutline = False
         self.drawTimer = timeit.default_timer()
 
     def SetUIreferences(self, imageLabel, instanceDropdown, classDropDown):
@@ -94,11 +99,21 @@ class MaskManager:
         print("Selected instance: " + str(index))
         self.selectedMask = self.selectedImage.maskList[index]
         self.selectedIsGroup = False
+        if self.showOutline is True:
+            self.ShowOutline()
 
     def ClassSelect(self, index):
         print("Selected class: " + str(index))
         self.selectedMask = self.selectedImage.classList[index]
         self.selectedIsGroup = True
+        if self.showOutline is True:
+            self.ShowOutline()
+
+    def ReDrawCurrentImage(self):
+        pixmap = QPixmap(self.imageFullPath + self.editFilename)
+        self.displayGraphicLabel.setPixmap(pixmap)
+        if self.showOutline is True:
+            self.ShowOutline()
 
     def DrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
@@ -162,36 +177,6 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = mergedImg
 
-    # This version is slightly slower than the new one
-    def DrawMaskOLD(self, mask):
-        drawingImg = self.baseGraphic.copy()
-
-        groupSettings = []
-        for cMask in self.selectedImage.classList:
-            if cMask.maskList.__contains__(mask):
-                groupSettings.append(cMask.maskSettings)
-
-        for gMask in self.selectedImage.groupList:
-            if gMask.maskList.__contains__(mask):
-                groupSettings.append(gMask.maskSettings)
-
-        totalBrightness = mask.maskSettings.brightness
-        totalSaturation = mask.maskSettings.saturation
-
-        for settings in groupSettings:
-            totalBrightness += settings.brightness
-            totalSaturation += settings.saturation
-
-        drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
-        drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
-
-        mergedImg = np.where(mask.maskTrueFalse == True, drawingImg, self.currentGraphic)
-
-        cv2.imwrite('imageData/p6_maskedit.png', mergedImg)
-        pixmap = QPixmap('imageData/p6_maskedit.png')
-        self.displayGraphicLabel.setPixmap(pixmap)
-        self.currentGraphic = mergedImg
-
     def DrawSelectedMask(self):
         if self.selectedIsGroup:
             for mask in self.selectedMask.maskList:
@@ -201,9 +186,37 @@ class MaskManager:
             self.DrawMask(self.selectedMask)
             print("completed drawing")
 
+        self.ShowOutline()
 
+    def ShowOutline(self):
+        outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
 
+        for mask in self.selectedMask.getMasks():
+            converted = mask.maskBlackWhite.astype(np.uint8)
+            contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=5)
 
+        outlines = np.where(outlines > 1, outlines, self.selectedImage.currentGraphic)
+        cv2.imwrite(self.imageFullPath + self.outlineFilename, outlines)
+        outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
+        self.displayGraphicLabel.setPixmap(outlinePixmap)
+
+    def ShowOutlineNo(self):
+        outline = 0
+        kernel = np.ones((3, 3), np.uint8)
+        for k in self.selectedMask.getMasks():
+            kimg = k.maskBlackWhite.astype('uint8')
+            outlines = cv2.morphologyEx(kimg, cv2.MORPH_GRADIENT, kernel)
+            outlines = np.where(outlines >= 1,
+                                (random.randrange(1, 255), random.randrange(1, 255), random.randrange(1, 255)), 0)
+            outline += outlines
+        outline = np.where(outline >= 1, outline, self.cvimage).astype(np.uint8)
+        cv2.imshow('outline', outline)
+
+    def ShowOutlineToggle(self, toggle):
+        self.showOutline = not self.showOutline
+        self.ReDrawCurrentImage()
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue
         if timeit.default_timer() - self.drawTimer > .1:
@@ -228,5 +241,8 @@ class MaskManager:
         print("update curvetool")
 
     def BlurChange(self, blurValue, backgroundState, filterState):
-        self.blur.BlurFilter(self.currentGraphic, self.selectedMask, self.imageFullPath, blurValue, backgroundState, filterState)
-        self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.editFilename))
+        blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask, self.imageFullPath, blurValue, backgroundState, filterState)
+
+        if blurImage is not None:
+            cv2.imwrite(self.imageFullPath + self.blurFilename, blurImage)
+            self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.blurFilename))

@@ -10,6 +10,6 @@ class Blur:
                 blur = np.where(mask.maskTrueFalse == False, blur, baseImage)
             else:
                 blur = np.where(mask.maskTrueFalse == True, blur, baseImage)
-            cv2.imwrite(imagePath + 'p6_maskedit.png', blur)
+            return blur
         else:
-            cv2.imwrite(imagePath + 'p6_maskedit.png', baseImage)
+            return None

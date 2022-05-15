@@ -24,18 +24,10 @@ class MaskUI:
     def save(self):
         cv2.imwrite("save.png", self.cvimage)
 
-    #def showOutline(self):
-     ##  kernel = np.ones((3, 3), np.uint8)
-      #  print(len(self.maskManager.maskList))
-      #  for i in self.maskManager.maskList:
-      #      conv = i.maskImage.astype(np.uint8)
-      #      outlines = cv2.morphologyEx(conv, cv2.MORPH_GRADIENT, kernel)
-      #      outlines = np.where(outlines >= 1, 255, 0)
-      #      outline += outlines
-      #  outline = np.where(outline >= 1, outlines, np.tile(self.cvimage,(1,4))).astype(np.uint8)
-      #  cv2.imshow('outline', outline)
+
 
     def TabSwitch(self, index):
+
         if index == 0:
             print("Switched to Mask Selection tab")
         if index == 1:
@@ -62,7 +54,6 @@ class MaskUI:
         app = QApplication(sys.argv)
 
         window = QWidget()
-        mainImage = QLabel()
         self.maskManager = MaskManager()
 
         labelImageSelect = QLabel("Select image to edit")
@@ -71,11 +62,17 @@ class MaskUI:
         dropdownImages.addItems(imageFolderNames)
         dropdownImages.setCurrentText("Royal Guard")
 
+        mainImage = QLabel()
+
+        self.outlineToggle = QCheckBox()
+        self.outlineToggle.setChecked(False)
+
         imageDisplayLayout = QVBoxLayout()
         imageDisplayLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         imageDisplayLayout.addWidget(labelImageSelect)
         imageDisplayLayout.addWidget(dropdownImages)
         imageDisplayLayout.addWidget(mainImage)
+        imageDisplayLayout.addWidget(self.outlineToggle)
 
         maskSelectLayout = QVBoxLayout()
         simpleEditLayout = QVBoxLayout()
@@ -83,7 +80,6 @@ class MaskUI:
         blurLayout = QVBoxLayout()
 
         tabWindow = QTabWidget()
-        tabWindow.currentChanged.connect(self.TabSwitch)
 
         #TAB 1 - MASK SELECTION
         tabMaskSelect = QWidget()
@@ -218,11 +214,16 @@ class MaskUI:
 
         #SET FUNCTIONALITY
 
+        tabWindow.currentChanged.connect(self.TabSwitch)
+
         dropdownImages.currentTextChanged.connect(self.maskManager.ImageSelect)
         dropdownImages.currentIndexChanged.connect(lambda: tabWindow.setCurrentIndex(0))
+        dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
 
         dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
         dropdownClasses.activated.connect(self.maskManager.ClassSelect)
+
+        self.outlineToggle.stateChanged.connect(self.maskManager.ShowOutlineToggle)
 
         self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
         self.sliderBrightness.sliderReleased.connect(self.maskManager.BrightnessChangeForce)
