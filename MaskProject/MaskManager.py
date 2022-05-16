@@ -4,8 +4,9 @@ import timeit
 import random
 from PyQt5.QtGui import QPixmap
 
+from MaskGroup import MaskGroup
 from LoadedImage import LoadedImage
-from MaskSelection import MaskSelection
+from MaskDetector import MaskSelection
 from SimpleEdits import SimpleEdits
 from CurveTool import CurveTool
 from Blur import Blur
@@ -28,6 +29,8 @@ class MaskManager:
         self.instanceDropdown = None
         self.classDropdown = None
         self.groupDropdown = None
+        self.maskWindow = None
+        self.deleteDropdown = None
 
         self.simpleEdits = SimpleEdits()
         self.curveTool = CurveTool()
@@ -41,20 +44,29 @@ class MaskManager:
         self.showOutline = False
         self.drawTimer = timeit.default_timer()
 
-    def SetUIreferences(self, imageLabel, instanceDropdown, classDropDown):
+    def SetUIreferences(self, imageLabel, instanceDropdown, classDropDown, groupDropdown, maskWindow, deleteDropdown):
         self.displayGraphicLabel = imageLabel
         self.instanceDropdown = instanceDropdown
         self.classDropdown = classDropDown
+        self.groupDropdown = groupDropdown
+        self.newGroupMaskWindow = maskWindow
+        self.deleteDropdown = deleteDropdown
 
     def SetMaskLists(self):
 
         self.instanceDropdown.clear()
         for mask in self.selectedImage.maskList:
             self.instanceDropdown.addItem(mask.maskName)
+            self.newGroupMaskWindow.addItem(mask.maskName)
 
         self.classDropdown.clear()
         for maskClass in self.selectedImage.classList:
-            self.classDropdown.addItem(maskClass.groupName)
+            self.classDropdown.addItem(maskClass.maskName)
+
+        self.groupDropdown.clear()
+        for maskGroup in self.selectedImage.groupList:
+            self.groupDropdown.addItem(maskGroup.maskName)
+            self.deleteDropdown.addItem(maskGroup.maskName)
 
         self.selectedMask = self.selectedImage.maskList[0]
 
@@ -95,26 +107,16 @@ class MaskManager:
 
         return newImage
 
-    def InstanceSelect(self, index):
-        print("Selected instance: " + str(index))
-        self.selectedMask = self.selectedImage.maskList[index]
-        self.selectedIsGroup = False
-        if self.showOutline is True:
-            self.ShowOutline()
-
-    def ClassSelect(self, index):
-        print("Selected class: " + str(index))
-        self.selectedMask = self.selectedImage.classList[index]
-        self.selectedIsGroup = True
-        if self.showOutline is True:
-            self.ShowOutline()
-
     def ReDrawCurrentImage(self):
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
         print(self.showOutline)
         if self.showOutline is True:
             self.ShowOutline()
+
+    def DrawBaseImage(self):
+        pixmap = QPixmap(self.imageFullPath + self.inputFilename)
+        self.displayGraphicLabel.setPixmap(pixmap)
 
     def DrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
@@ -226,8 +228,8 @@ class MaskManager:
 
     def ShowOutline(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
-        
-        for mask in self.selectedMask.getMasks():
+
+        for mask in self.selectedMask.GetMasks():
             converted = mask.maskBlackWhite.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
@@ -241,6 +243,79 @@ class MaskManager:
         print("Toggle show outline")
         self.showOutline = not self.showOutline
         self.ReDrawCurrentImage()
+
+    def ShowCreateOutlines(self):
+        outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
+
+        outLineMasks = []
+        for name in self.newGroupMaskWindow.selectedItems():
+            for mask in self.selectedImage.maskList:
+                if name.text() == mask.maskName:
+                    outLineMasks.append(mask)
+
+        print(len(outLineMasks))
+        for mask in outLineMasks:
+            converted = mask.maskBlackWhite.astype(np.uint8)
+            contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
+
+        outlines = np.where(outlines > 1, outlines, self.selectedImage.baseGraphic)
+        cv2.imwrite(self.imageFullPath + self.outlineFilename, outlines)
+        outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
+        self.displayGraphicLabel.setPixmap(outlinePixmap)
+
+    def InstanceSelect(self, index):
+        print("Selected instance: " + str(index))
+        self.selectedMask = self.selectedImage.maskList[index]
+        self.selectedIsGroup = False
+        if self.showOutline is True:
+            self.ShowOutline()
+
+    def ClassSelect(self, index):
+        print("Selected class: " + str(index))
+        self.selectedMask = self.selectedImage.classList[index]
+        self.selectedIsGroup = True
+        if self.showOutline is True:
+            self.ShowOutline()
+    def GroupSelect(self, index):
+        print("Selected group: " + str(index))
+        self.selectedMask = self.selectedImage.groupList[index]
+        self.selectedIsGroup = True
+        if self.showOutline is True:
+            self.ShowOutline()
+
+    def CreateGroup(self, newName):
+        if newName == "":
+            print("Cannot create group without a name")
+            return
+        for group in self.selectedImage.groupList:
+            if group.maskName == newName:
+                print("Cannot create multiple groups with the same name")
+                return
+
+        newGroup = MaskGroup(newName)
+        for item in self.newGroupMaskWindow.selectedItems():
+            for mask in self.selectedImage.maskList:
+                if item.text() == mask.maskName:
+                    newGroup.AddMask(mask)
+        self.groupDropdown.addItem(newGroup.maskName)
+        self.deleteDropdown.addItem(newGroup.maskName)
+        self.selectedImage.groupList.append(newGroup)
+
+    def RemoveGroup(self, groupName):
+
+        for group in self.selectedImage.groupList:
+            if group.maskName == groupName:
+                self.selectedImage.groupList.remove(group)
+        index = self.deleteDropdown.findText(groupName)
+        self.deleteDropdown.removeItem(index)
+        index = self.groupDropdown.findText(groupName)
+        self.groupDropdown.removeItem(index)
+
+        if self.selectedMask.maskName == groupName:
+            self.selectedMask = self.selectedImage.maskList[0]
+            self.selectedIsGroup = False
+
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue
         if timeit.default_timer() - self.drawTimer > .1:

@@ -22,5 +22,5 @@ class Mask:
         self.maskImageBounded = img[self.minX:self.maxX, self.minY:self.maxY]
         #cv2.imshow(name, self.boundedImage)
 
-    def getMasks(self):
+    def GetMasks(self):
         return [self]

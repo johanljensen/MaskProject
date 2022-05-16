@@ -2,10 +2,11 @@ import os
 import sys
 import numpy as np
 import random
+import PyQt5.QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSlider, QTabWidget, QComboBox, QLineEdit, \
-    QPushButton, QCheckBox, QFileDialog, QApplication
+    QPushButton, QCheckBox, QFileDialog, QApplication, QListWidget, QAbstractItemView, QSpacerItem
 
 import cv2
 from MaskManager import MaskManager
@@ -16,33 +17,21 @@ from MaskManager import MaskManager
 
 class MaskUI:
 
-#def load_image(self):
-    #   path, _ = QFileDialog.getOpenFileName(None, "Load Image", "")
-    # if path:
-    #      self.load_file(path)
-    #    self.pixmap =
-    def save(self):
-        cv2.imwrite("save.png", self.cvimage)
-
-
-
     def TabSwitch(self, index):
 
         if index == 0:
             print("Switched to Mask Selection tab")
         if index == 1:
+            print("Switched to Group Creation tab")
+            self.maskManager.DrawBaseImage()
+        if index == 2:
             print("Switched to Saturation/Brightness tab")
             self.sliderBrightness.setSliderPosition(self.maskManager.getCurrentBrightness())
             self.sliderSaturation.setSliderPosition(self.maskManager.getCurrentSaturation())
-        if index == 2:
-            print("Switched to CurveTool tab")
         if index == 3:
+            print("Switched to CurveTool tab")
+        if index == 4:
             print("Switched to Blur Filter tab")
-
-    def updateButton(self):
-        self.mathpixmap = QPixmap('plot.png')
-        #self.labelmathpixmap.setPixmap(self.mathpixmap)
-        self.window.update()
 
     def UpdateCurveToolWindow(self):
         curveToolPixmap = QPixmap('imageData/plot.png')
@@ -92,14 +81,45 @@ class MaskUI:
         dropdownInstances = QComboBox()
         labelClasses = QLabel("Classes")
         dropdownClasses = QComboBox()
+        labelGroups = QLabel("Groups")
+        dropdownGroups = QComboBox()
 
         maskSelectLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         maskSelectLayout.addWidget(labelInstance)
         maskSelectLayout.addWidget(dropdownInstances)
         maskSelectLayout.addWidget(labelClasses)
         maskSelectLayout.addWidget(dropdownClasses)
+        maskSelectLayout.addWidget(labelGroups)
+        maskSelectLayout.addWidget(dropdownGroups)
 
-        #TAB 2 - SIMPLE EDITS
+
+        #TAB 2 - CREATE GROUP
+        tabGroupCreate = QWidget()
+
+        newGroupName = QLineEdit("Insert name")
+        newGroupBtn = QPushButton("Create group with selected masks")
+
+        maskList = QListWidget()
+        maskList.setSelectionMode(QAbstractItemView.MultiSelection)
+        maskList.setMaximumHeight(250)
+
+        createBtnNameLayout = QHBoxLayout()
+        createBtnNameLayout.addWidget(newGroupBtn)
+        createBtnNameLayout.addWidget(newGroupName)
+
+        deleteGroupDropdown = QComboBox()
+        deleteGroupBtn = QPushButton("Delete mask group")
+        deleteGroupBtn.setMaximumWidth(100)
+
+        newGroupLayout = QVBoxLayout()
+        newGroupLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        newGroupLayout.addLayout(createBtnNameLayout)
+        newGroupLayout.addWidget(maskList)
+        newGroupLayout.addWidget(deleteGroupDropdown)
+        newGroupLayout.addWidget(deleteGroupBtn)
+
+
+        #TAB 3 - SIMPLE EDITS
         tabSimpleEdit = QWidget()
 
         labelBrightness = QLabel("Brightness")
@@ -133,7 +153,7 @@ class MaskUI:
         simpleEditLayout.addWidget(labelSatSlider)
         simpleEditLayout.addWidget(self.sliderSaturation)
 
-        #TAB 3 - CURVE TOOL
+        #TAB 4 - CURVE TOOL
         tabCurveTool = QWidget()
 
         lineEditLabel1 = QLabel("Value 1")
@@ -173,7 +193,7 @@ class MaskUI:
         curveToolLayout.addWidget(colorChannelSelect)
         curveToolLayout.addWidget(self.curveToolImage)
 
-        #TAB 4 - BLUR FILTER
+        #TAB 5 - BLUR FILTER
         tabBlur = QWidget()
 
         applyBackgroundLabel = QLabel("Apply to Background")
@@ -206,14 +226,16 @@ class MaskUI:
         mainLayout = QHBoxLayout()
 
         tabMaskSelect.setLayout(maskSelectLayout)
+        tabGroupCreate.setLayout(newGroupLayout)
         tabSimpleEdit.setLayout(simpleEditLayout)
         tabCurveTool.setLayout(curveToolLayout)
         tabBlur.setLayout(blurLayout)
 
-        tabWindow.addTab(tabMaskSelect, "Mask")
+        tabWindow.addTab(tabMaskSelect, "Mask Select")
+        tabWindow.addTab(tabGroupCreate, "Group Create")
         tabWindow.addTab(tabSimpleEdit, "Adjustments")
         tabWindow.addTab(tabCurveTool, "Curve Tool")
-        tabWindow.addTab(tabBlur, "Blur")
+        tabWindow.addTab(tabBlur, "Blur Filter")
 
         mainLayout.addLayout(imageDisplayLayout)
         mainLayout.addWidget(tabWindow)
@@ -223,14 +245,21 @@ class MaskUI:
 
         tabWindow.currentChanged.connect(self.TabSwitch)
 
+        self.outlineToggle.stateChanged.connect(self.maskManager.ShowOutlineToggle)
+
         dropdownImages.currentTextChanged.connect(self.maskManager.ImageSelect)
         dropdownImages.currentIndexChanged.connect(lambda: tabWindow.setCurrentIndex(0))
         dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
 
         dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
         dropdownClasses.activated.connect(self.maskManager.ClassSelect)
+        dropdownGroups.activated.connect(self.maskManager.GroupSelect)
 
-        self.outlineToggle.stateChanged.connect(self.maskManager.ShowOutlineToggle)
+        newGroupBtn.clicked.connect(lambda:
+                                    self.maskManager.CreateGroup(newGroupName.text()))
+        maskList.clicked.connect(self.maskManager.ShowCreateOutlines)
+        deleteGroupBtn.clicked.connect(lambda:
+                                       self.maskManager.RemoveGroup(deleteGroupDropdown.currentText()))
 
         self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
         self.sliderBrightness.sliderReleased.connect(self.maskManager.BrightnessChangeForce)
@@ -268,7 +297,7 @@ class MaskUI:
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
 
-        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses)
+        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses, dropdownGroups, maskList, deleteGroupDropdown)
         self.maskManager.ImageSelect(dropdownImages.currentText())
 
 

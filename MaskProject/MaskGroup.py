@@ -6,29 +6,28 @@ from MaskSettings import MaskSettings
 
 class MaskGroup():
 
-    def __init__(self, name, maskClass):
+    def __init__(self, name):
         self.maskList = []
         self.maskSettings = MaskSettings()
-        self.groupName = name
-        self.maskClass = maskClass
+        self.maskName = name
         self.maskBlackWhite = None
         self.maskTrueFalse = None
 
-    def getMasks(self):
+    def GetMasks(self):
         print(len(self.maskList))
         return self.maskList
 
-    def addMask(self, newMask):
+    def AddMask(self, newMask):
         self.maskList.append(newMask)
-        self.refreshMask()
+        self.RefreshMask()
         #print("Added " + newMask.maskName)
 
-    def removeMask(self, delMask):
+    def RemoveMask(self, delMask):
         self.maskList.remove(delMask)
         if len(self.maskList) > 0:
-            self.refreshMask()
+            self.RefreshMask()
 
-    def refreshMask(self):
+    def RefreshMask(self):
         self.maskTrueFalse = np.copy(self.maskList[0].maskTrueFalse)
         self.maskBlackWhite = np.copy(self.maskList[0].maskBlackWhite)
 

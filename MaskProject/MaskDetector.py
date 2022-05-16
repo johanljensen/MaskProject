@@ -36,10 +36,10 @@ class MaskSelection:
                 self.uniqueClasses.append(classDict.coco_dict[j])
 
         for uClass in self.uniqueClasses:
-            maskGroup = MaskGroup(uClass, uClass)
+            maskGroup = MaskGroup(uClass)
             for mask in self.maskList:
                 if mask.maskClass == uClass:
-                    maskGroup.addMask(mask)
+                    maskGroup.AddMask(mask)
                     #print("Added mask of class: " + mask.maskClass + " to group of class: " + uClass)
             self.classList.append(maskGroup)
 
