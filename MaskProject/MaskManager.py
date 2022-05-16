@@ -55,6 +55,7 @@ class MaskManager:
 
     def SetMaskLists(self):
         self.instanceDropdown.clear()
+        self.newGroupMaskWindow.clear()
         for mask in self.selectedImage.maskList:
             self.instanceDropdown.addItem(mask.maskName)
             self.newGroupMaskWindow.addItem(mask.maskName)
@@ -64,6 +65,7 @@ class MaskManager:
             self.classDropdown.addItem(maskClass.maskName)
 
         self.groupDropdown.clear()
+        self.deleteDropdown.clear()
         for maskGroup in self.selectedImage.groupList:
             self.groupDropdown.addItem(maskGroup.maskName)
             self.deleteDropdown.addItem(maskGroup.maskName)
