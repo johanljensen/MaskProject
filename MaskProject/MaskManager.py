@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import timeit
-import random
 from PyQt5.QtGui import QPixmap
 
 from MaskGroup import MaskGroup
@@ -15,17 +14,18 @@ from Blur import Blur
 class MaskManager:
 
     def __init__(self):
-        print("MaskManager made")
-
+        #print("MaskManager made")
         self.imageBasePath = 'imageData/'
+        self.imageFullPath = ""
         self.inputFilename = '/input.jpg'
         self.editFilename = '/p6_mask_edit.png'
         self.blurFilename = '/p6_blur_edit.png'
         self.outlineFilename = '/p6_outline_edit.png'
 
         self.baseGraphic = None
-
         self.displayGraphicLabel = None
+        self.currentSelectionText = None
+
         self.instanceDropdown = None
         self.classDropdown = None
         self.groupDropdown = None
@@ -39,13 +39,14 @@ class MaskManager:
         self.loadedImages = []
         self.selectedMask = None
         self.selectedImage = None
-        self.selectedIsGroup = False
 
-        self.showOutline = False
+        self.showOutline = True
         self.drawTimer = timeit.default_timer()
 
-    def SetUIreferences(self, imageLabel, instanceDropdown, classDropDown, groupDropdown, maskWindow, deleteDropdown):
+    def SetUIreferences(self, imageLabel, currentSelectionText,
+                        instanceDropdown, classDropDown, groupDropdown, maskWindow, deleteDropdown):
         self.displayGraphicLabel = imageLabel
+        self.currentSelectionText = currentSelectionText
         self.instanceDropdown = instanceDropdown
         self.classDropdown = classDropDown
         self.groupDropdown = groupDropdown
@@ -53,7 +54,6 @@ class MaskManager:
         self.deleteDropdown = deleteDropdown
 
     def SetMaskLists(self):
-
         self.instanceDropdown.clear()
         for mask in self.selectedImage.maskList:
             self.instanceDropdown.addItem(mask.maskName)
@@ -68,20 +68,23 @@ class MaskManager:
             self.groupDropdown.addItem(maskGroup.maskName)
             self.deleteDropdown.addItem(maskGroup.maskName)
 
-        self.selectedMask = self.selectedImage.maskList[0]
+        self.SetSelectedMask(self.selectedImage.maskList[0], "Mask")
+
+    def SetSelectedMask(self, mask, typeText):
+        self.selectedMask = mask
+        self.currentSelectionText.setText("Current mask selection: " + typeText + "_" + mask.maskName)
 
     def GetImageMasks(self, loadedImage):
         loadedImage.maskList, loadedImage.classList = MaskSelection().DetectMasks(self.imageFullPath)
 
     def ImageSelect(self, imageName):
-        print("Switched to image: " + imageName)
+        #print("Switched to image: " + imageName)
         self.imageFullPath = self.imageBasePath + imageName + "/"
         self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.inputFilename))
         self.baseGraphic = cv2.imread(self.imageFullPath + self.inputFilename)
 
         newImage = None
         for image in self.loadedImages:
-            print(image.imageName + " --- " + imageName)
             if image.imageName == imageName:
                 newImage = image
                 break
@@ -110,7 +113,7 @@ class MaskManager:
     def ReDrawCurrentImage(self):
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
-        print(self.showOutline)
+
         if self.showOutline is True:
             self.ShowOutline()
 
@@ -120,10 +123,12 @@ class MaskManager:
 
         self.newGroupMaskWindow.clearSelection()
 
+    #Completely redraws the image from the ground up, actually completely unused?
     def DrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
-        for mask in self.selectedImage.maskList:
 
+        for mask in self.selectedImage.maskList:
+            perMaskImg = self.baseGraphic.copy()
             groupSettings = []
             for cMask in self.selectedImage.classList:
                 if cMask.maskList.__contains__(mask):
@@ -140,10 +145,12 @@ class MaskManager:
                 totalBrightness += settings.brightness
                 totalSaturation += settings.saturation
 
-            drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
-            drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
+            if totalBrightness != 0:
+                perMaskImg = self.simpleEdits.DrawBrightness(totalBrightness, perMaskImg)
+            if totalSaturation != 0:
+                perMaskImg = self.simpleEdits.DrawSaturation(totalSaturation, perMaskImg)
 
-            drawingImg = np.where(self.selectedMask.maskTrueFalse == True, drawingImg, self.selectedImage.currentGraphic)
+            drawingImg = np.where(mask.maskTrueFalse == True, perMaskImg, drawingImg)
 
         cv2.imwrite(self.imageFullPath + self.editFilename, drawingImg)
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
@@ -173,8 +180,10 @@ class MaskManager:
             totalBrightness += settings.brightness
             totalSaturation += settings.saturation
 
-        drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
-        drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
+        if totalBrightness != 0:
+            drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
+        if totalSaturation != 0:
+            drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
 
         blankImg = self.baseGraphic.copy()
         blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
@@ -185,6 +194,7 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = mergedImg
 
+    #Draw mask with curvetool
     def DrawMaskWithCurveTool(self, mask):
         drawingImg = cv2.imread("imageData/" + self.selectedImage.imageName + "/curve.png")[mask.minX:mask.maxX,
                      mask.minY:mask.maxY]
@@ -207,8 +217,10 @@ class MaskManager:
             totalBrightness += settings.brightness
             totalSaturation += settings.saturation
 
-        drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
-        drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
+        if totalBrightness != 0:
+            drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
+        if totalSaturation != 0:
+            drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
 
         blankImg = self.baseGraphic.copy()
         blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
@@ -220,13 +232,8 @@ class MaskManager:
         self.selectedImage.currentGraphic = mergedImg
 
     def DrawSelectedMask(self):
-        if self.selectedIsGroup:
-            for mask in self.selectedMask.maskList:
-                self.DrawMask(mask)
-        else:
-            print("started drawing")
-            self.DrawMask(self.selectedMask)
-            print("completed drawing")
+        for mask in self.selectedMask.GetMasks():
+            self.DrawMask(mask)
 
         if self.showOutline is True:
             self.ShowOutline()
@@ -258,7 +265,6 @@ class MaskManager:
                 if name.text() == mask.maskName:
                     outLineMasks.append(mask)
 
-        print(len(outLineMasks))
         for mask in outLineMasks:
             converted = mask.maskBlackWhite.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -270,22 +276,19 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(outlinePixmap)
 
     def InstanceSelect(self, index):
-        print("Selected instance: " + str(index))
-        self.selectedMask = self.selectedImage.maskList[index]
-        self.selectedIsGroup = False
+        #print("Selected instance: " + str(index))
+        self.SetSelectedMask(self.selectedImage.maskList[index], "Mask")
         if self.showOutline is True:
             self.ShowOutline()
 
     def ClassSelect(self, index):
-        print("Selected class: " + str(index))
-        self.selectedMask = self.selectedImage.classList[index]
-        self.selectedIsGroup = True
+        #print("Selected class: " + str(index))
+        self.SetSelectedMask(self.selectedImage.classList[index], "Class")
         if self.showOutline is True:
             self.ShowOutline()
     def GroupSelect(self, index):
-        print("Selected group: " + str(index))
-        self.selectedMask = self.selectedImage.groupList[index]
-        self.selectedIsGroup = True
+        #print("Selected group: " + str(index))
+        self.SetSelectedMask(self.selectedImage.groupList[index], "Group")
         if self.showOutline is True:
             self.ShowOutline()
 
@@ -319,7 +322,6 @@ class MaskManager:
 
         if self.selectedMask.maskName == groupName:
             self.selectedMask = self.selectedImage.maskList[0]
-            self.selectedIsGroup = False
 
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue
@@ -342,15 +344,10 @@ class MaskManager:
         return self.selectedMask.maskSettings.saturation
 
     def UpdateCurveTool(self, value1, value2, value3, colorChannel):
-        self.curveTool.sliderChange(value1, value2, value3, colorChannel,
-                                    self.selectedMask, self.selectedImage)
-        if self.selectedIsGroup:
-            for mask in self.selectedMask.maskList:
-                self.DrawMaskWithCurveTool(mask)
-        else:
-            print("started drawing")
-            self.DrawMaskWithCurveTool(self.selectedMask)
-            print("completed drawing")
+        self.curveTool.sliderChange(value1, value2, value3, colorChannel, self.selectedImage)
+
+        for mask in self.selectedMask.GetMasks():
+            self.DrawMaskWithCurveTool(mask)
 
         if self.showOutline is True:
             self.ShowOutline()

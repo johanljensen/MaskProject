@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import ClassDict
 from Mask import Mask

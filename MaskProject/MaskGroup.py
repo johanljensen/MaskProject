@@ -1,7 +1,5 @@
-import cv2
 import numpy as np
 
-from Mask import Mask
 from MaskSettings import MaskSettings
 
 class MaskGroup():
@@ -14,7 +12,6 @@ class MaskGroup():
         self.maskTrueFalse = None
 
     def GetMasks(self):
-        print(len(self.maskList))
         return self.maskList
 
     def AddMask(self, newMask):

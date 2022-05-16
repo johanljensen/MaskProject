@@ -12,7 +12,7 @@ class CurveTool:
             lut = cv2.LUT(value, look_up_table, lutImg)
         return lut
 
-    def sliderChange(self, val1, val2, val3, channel, mask, image):
+    def sliderChange(self, val1, val2, val3, channel, image):
         fig = pl.figure()
         self.x = np.arange(0, 255, 0.1)
         self.y = (float(val1 / 1000000) * self.x ** 3) + (float(val2 / 1000) * self.x ** 2) + (

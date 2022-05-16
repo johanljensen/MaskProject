@@ -11,22 +11,22 @@ class MaskUI:
 
     def TabSwitch(self, index):
         if index == 0:
-            print("Switched to Mask Selection tab")
-            self.maskManager.DrawCurrentImage()
+            #print("Switched to Mask Selection tab")
+            self.maskManager.ReDrawCurrentImage()
         if index == 1:
-            print("Switched to Group Creation tab")
+            #print("Switched to Group Creation tab")
             self.maskManager.DrawBaseImage()
         if index == 2:
-            print("Switched to Saturation/Brightness tab")
-            self.maskManager.DrawCurrentImage()
+            #print("Switched to Saturation/Brightness tab")
+            self.maskManager.ReDrawCurrentImage()
             self.sliderBrightness.setSliderPosition(self.maskManager.getCurrentBrightness())
             self.sliderSaturation.setSliderPosition(self.maskManager.getCurrentSaturation())
         if index == 3:
-            print("Switched to CurveTool tab")
-            self.maskManager.DrawCurrentImage()
+            #print("Switched to CurveTool tab")
+            self.maskManager.ReDrawCurrentImage()
         if index == 4:
-            print("Switched to Blur Filter tab")
-            self.maskManager.DrawCurrentImage()
+            #print("Switched to Blur Filter tab")
+            self.maskManager.ReDrawCurrentImage()
 
     def UpdateCurveToolWindow(self):
         curveToolPixmap = QPixmap('imageData/plot.png')
@@ -46,8 +46,10 @@ class MaskUI:
 
         mainImage = QLabel()
 
+        currentSelectionLabel = QLabel()
+
         self.outlineToggle = QCheckBox()
-        self.outlineToggle.setChecked(False)
+        self.outlineToggle.setChecked(True)
         outlineText = QLabel("Show mask outlines")
         outlineLayout = QHBoxLayout()
         outlineLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -59,6 +61,7 @@ class MaskUI:
         imageDisplayLayout.addWidget(labelImageSelect)
         imageDisplayLayout.addWidget(dropdownImages)
         imageDisplayLayout.addWidget(mainImage)
+        imageDisplayLayout.addWidget(currentSelectionLabel)
         imageDisplayLayout.addLayout(outlineLayout)
 
 
@@ -290,8 +293,8 @@ class MaskUI:
             lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
-        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses, dropdownGroups,
-                                         maskList, deleteGroupDropdown)
+        self.maskManager.SetUIreferences(mainImage, currentSelectionLabel, dropdownInstances,
+                                         dropdownClasses, dropdownGroups, maskList, deleteGroupDropdown)
         self.maskManager.ImageSelect(dropdownImages.currentText())
 
         window.setWindowTitle("Mask Manager")
