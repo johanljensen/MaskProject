@@ -143,34 +143,39 @@ class MaskUI:
         simpleEditLayout.addLayout(layoutBrightness)
         simpleEditLayout.addWidget(self.sliderBrightness)
         simpleEditLayout.addLayout(layoutSaturation)
-        simpleEditLayout.addWidget(labelSatSlider)
         simpleEditLayout.addWidget(self.sliderSaturation)
 
 
         #TAB 4 - CURVE TOOL
         tabCurveTool = QWidget()
 
-        lineEditLabel1 = QLabel("Value 1")
-        lineEditValue1 = QSlider(Qt.Orientation.Horizontal)
-        lineEditValue1.setMinimum(-10)
-        lineEditValue1.setMaximum(10)
+        lineEditLabel1 = QLabel("Value 1:")
+        lineEditSlider1 = QSlider(Qt.Orientation.Horizontal)
+        lineEditSlider1.setMinimum(-10)
+        lineEditSlider1.setMaximum(10)
+        lineEditValue1 = QLabel(str(lineEditSlider1.value()))
         lineEditLayout1 = QHBoxLayout()
+        lineEditLayout1.setAlignment(Qt.AlignmentFlag.AlignLeft)
         lineEditLayout1.addWidget(lineEditLabel1)
         lineEditLayout1.addWidget(lineEditValue1)
 
-        lineEditLabel2 = QLabel("Value 2")
-        lineEditValue2 = QSlider(Qt.Orientation.Horizontal)
-        lineEditValue2.setMinimum(-10)
-        lineEditValue2.setMaximum(10)
+        lineEditLabel2 = QLabel("Value 2:")
+        lineEditSlider2 = QSlider(Qt.Orientation.Horizontal)
+        lineEditSlider2.setMinimum(-10)
+        lineEditSlider2.setMaximum(10)
+        lineEditValue2 = QLabel(str(lineEditSlider2.value()))
         lineEditLayout2 = QHBoxLayout()
+        lineEditLayout2.setAlignment(Qt.AlignmentFlag.AlignLeft)
         lineEditLayout2.addWidget(lineEditLabel2)
         lineEditLayout2.addWidget(lineEditValue2)
 
-        lineEditLabel3 = QLabel("Value 3")
-        lineEditValue3 = QSlider(Qt.Orientation.Horizontal)
-        lineEditValue3.setMinimum(-10)
-        lineEditValue3.setMaximum(10)
+        lineEditLabel3 = QLabel("Value 3:")
+        lineEditSlider3 = QSlider(Qt.Orientation.Horizontal)
+        lineEditSlider3.setMinimum(-10)
+        lineEditSlider3.setMaximum(10)
+        lineEditValue3 = QLabel(str(lineEditSlider3.value()))
         lineEditLayout3 = QHBoxLayout()
+        lineEditLayout3.setAlignment(Qt.AlignmentFlag.AlignLeft)
         lineEditLayout3.addWidget(lineEditLabel3)
         lineEditLayout3.addWidget(lineEditValue3)
 
@@ -183,8 +188,11 @@ class MaskUI:
 
         curveToolLayout = QVBoxLayout()
         curveToolLayout.addLayout(lineEditLayout1)
+        curveToolLayout.addWidget(lineEditSlider1)
         curveToolLayout.addLayout(lineEditLayout2)
+        curveToolLayout.addWidget(lineEditSlider2)
         curveToolLayout.addLayout(lineEditLayout3)
+        curveToolLayout.addWidget(lineEditSlider3)
         curveToolLayout.addWidget(colorChannelSelect)
         curveToolLayout.addWidget(self.curveToolImage)
 
@@ -267,21 +275,24 @@ class MaskUI:
         self.sliderSaturation.sliderReleased.connect(self.maskManager.SaturationChangeForce)
         self.sliderSaturation.valueChanged.connect(lambda: labelSatSlider.setText(str(self.sliderSaturation.value())))
 
-        lineEditValue1.valueChanged.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
-                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
-        lineEditValue2.valueChanged.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
-                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
-        lineEditValue3.valueChanged.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
-                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
-        lineEditValue1.valueChanged.connect(self.UpdateCurveToolWindow)
-        lineEditValue2.valueChanged.connect(self.UpdateCurveToolWindow)
-        lineEditValue3.valueChanged.connect(self.UpdateCurveToolWindow)
+        lineEditSlider1.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditSlider1.value(), lineEditSlider2.value(),
+                                                     lineEditSlider3.value(), colorChannelSelect.currentText()))
+        lineEditSlider2.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditSlider1.value(), lineEditSlider2.value(),
+                                                     lineEditSlider3.value(), colorChannelSelect.currentText()))
+        lineEditSlider3.valueChanged.connect(
+            lambda: self.maskManager.UpdateCurveTool(lineEditSlider1.value(), lineEditSlider2.value(),
+                                                     lineEditSlider3.value(), colorChannelSelect.currentText()))
+        lineEditSlider1.valueChanged.connect(lambda: lineEditValue1.setText(str(lineEditSlider1.value())))
+        lineEditSlider1.valueChanged.connect(self.UpdateCurveToolWindow)
+        lineEditSlider2.valueChanged.connect(lambda: lineEditValue2.setText(str(lineEditSlider2.value())))
+        lineEditSlider2.valueChanged.connect(self.UpdateCurveToolWindow)
+        lineEditSlider3.valueChanged.connect(lambda: lineEditValue3.setText(str(lineEditSlider3.value())))
+        lineEditSlider3.valueChanged.connect(self.UpdateCurveToolWindow)
         colorChannelSelect.currentIndexChanged.connect(
-            lambda: self.maskManager.UpdateCurveTool(lineEditValue1.value(), lineEditValue2.value(),
-                                                     lineEditValue3.value(), colorChannelSelect.currentText()))
+            lambda: self.maskManager.UpdateCurveTool(lineEditSlider1.value(), lineEditSlider2.value(),
+                                                     lineEditSlider3.value(), colorChannelSelect.currentText()))
 
         applyBackgroundCheck.stateChanged.connect(
             lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
