@@ -24,3 +24,9 @@ class Mask:
 
     def GetMasks(self):
         return [self]
+
+    def SetColorValues(self, value1, value2, value3, colorChannel):
+        self.maskSettings.colorCurve1 = value1
+        self.maskSettings.colorCurve2 = value2
+        self.maskSettings.colorCurve3 = value3
+        self.maskSettings.colorChannel = colorChannel

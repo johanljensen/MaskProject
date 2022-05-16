@@ -24,6 +24,16 @@ class MaskGroup():
         if len(self.maskList) > 0:
             self.RefreshMask()
 
+    def SetColorValues(self, value1, value2, value3, colorChannel):
+        self.maskSettings.colorCurve1 = value1
+        self.maskSettings.colorCurve2 = value2
+        self.maskSettings.colorCurve3 = value3
+        self.maskSettings.colorChannel = colorChannel
+
+        for mask in self.maskList:
+            if mask.maskSettings.colorChannel == "":
+                mask.maskSettings.colorChannel = colorChannel
+
     def RefreshMask(self):
         self.maskTrueFalse = np.copy(self.maskList[0].maskTrueFalse)
         self.maskBlackWhite = np.copy(self.maskList[0].maskBlackWhite)

@@ -196,10 +196,8 @@ class MaskManager:
 
     #Draw mask with curvetool
     def DrawMaskWithCurveTool(self, mask):
-        drawingImg = cv2.imread("imageData/" + self.selectedImage.imageName + "/curve.png")[mask.minX:mask.maxX,
-                     mask.minY:mask.maxY]
-        if not drawingImg.any():
-            drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
+
+        drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
 
         groupSettings = []
         for cMask in self.selectedImage.classList:
@@ -212,11 +210,20 @@ class MaskManager:
 
         totalBrightness = mask.maskSettings.brightness
         totalSaturation = mask.maskSettings.saturation
+        totalColor1 = mask.maskSettings.colorCurve1
+        totalColor2 = mask.maskSettings.colorCurve2
+        totalColor3 = mask.maskSettings.colorCurve3
+        channel = mask.maskSettings.colorChannel
 
         for settings in groupSettings:
             totalBrightness += settings.brightness
             totalSaturation += settings.saturation
+            totalColor1 += settings.colorCurve1
+            totalColor2 += settings.colorCurve2
+            totalColor3 += settings.colorCurve3
 
+        if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
+            drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3, channel, drawingImg)
         if totalBrightness != 0:
             drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
         if totalSaturation != 0:
@@ -232,11 +239,14 @@ class MaskManager:
         self.selectedImage.currentGraphic = mergedImg
 
     def DrawSelectedMask(self):
-        for mask in self.selectedMask.GetMasks():
-            self.DrawMask(mask)
+        if timeit.default_timer() - self.drawTimer > .1:
+            self.drawTimer = timeit.default_timer()
 
-        if self.showOutline is True:
-            self.ShowOutline()
+            for mask in self.selectedMask.GetMasks():
+                self.DrawMaskWithCurveTool(mask)
+
+            if self.showOutline is True:
+                self.ShowOutline()
 
     def ShowOutline(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
@@ -311,7 +321,6 @@ class MaskManager:
         self.selectedImage.groupList.append(newGroup)
 
     def RemoveGroup(self, groupName):
-
         for group in self.selectedImage.groupList:
             if group.maskName == groupName:
                 self.selectedImage.groupList.remove(group)
@@ -325,9 +334,7 @@ class MaskManager:
 
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue
-        if timeit.default_timer() - self.drawTimer > .1:
-            self.DrawSelectedMask()
-            self.drawTimer = timeit.default_timer()
+        self.DrawSelectedMask()
     def BrightnessChangeForce(self):
         self.DrawSelectedMask()
     def getCurrentBrightness(self):
@@ -335,27 +342,26 @@ class MaskManager:
 
     def SaturationChange(self, sliderValue):
         self.selectedMask.maskSettings.saturation = sliderValue
-        if timeit.default_timer() - self.drawTimer > .1:
-            self.DrawSelectedMask()
-            self.drawTimer = timeit.default_timer()
+        self.DrawSelectedMask()
     def SaturationChangeForce(self):
         self.DrawSelectedMask()
     def getCurrentSaturation(self):
         return self.selectedMask.maskSettings.saturation
 
     def UpdateCurveTool(self, value1, value2, value3, colorChannel):
-        self.curveTool.sliderChange(value1, value2, value3, colorChannel, self.selectedImage)
-
-        for mask in self.selectedMask.GetMasks():
-            self.DrawMaskWithCurveTool(mask)
-
-        if self.showOutline is True:
-            self.ShowOutline()
+        #self.curveTool.ApplyColorCurve(value1, value2, value3, colorChannel, self.selectedImage)
+        self.selectedMask.SetColorValues(value1, value2, value3, colorChannel)
+        self.DrawSelectedMask()
+    def getCurrentColorValues(self):
+        value1 = self.selectedMask.maskSettings.colorCurve1
+        value2 = self.selectedMask.maskSettings.colorCurve2
+        value3 = self.selectedMask.maskSettings.colorCurve3
+        channel = self.selectedMask.maskSettings.colorChannel
+        return value1, value2, value3, channel
 
     def BlurChange(self, blurValue, backgroundState, filterState):
         blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,
                                          self.imageFullPath, blurValue, backgroundState, filterState)
-
         if blurImage is not None:
             cv2.imwrite(self.imageFullPath + self.blurFilename, blurImage)
             self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.blurFilename))
