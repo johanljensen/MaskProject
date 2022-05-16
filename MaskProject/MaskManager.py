@@ -29,7 +29,7 @@ class MaskManager:
         self.instanceDropdown = None
         self.classDropdown = None
         self.groupDropdown = None
-        self.maskWindow = None
+        self.newGroupMaskWindow = None
         self.deleteDropdown = None
 
         self.simpleEdits = SimpleEdits()
@@ -118,6 +118,8 @@ class MaskManager:
         pixmap = QPixmap(self.imageFullPath + self.inputFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
 
+        self.newGroupMaskWindow.clearSelection()
+
     def DrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
         for mask in self.selectedImage.maskList:
@@ -147,6 +149,9 @@ class MaskManager:
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = drawingImg
+
+        if self.showOutline is True:
+            self.ShowOutline()
 
     # By only operating on the bounding box of the mask, this version gains a little speed
     def DrawMask(self, mask):

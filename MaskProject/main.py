@@ -1,42 +1,36 @@
 import os
 import sys
-import numpy as np
-import random
-import PyQt5.QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSlider, QTabWidget, QComboBox, QLineEdit, \
-    QPushButton, QCheckBox, QFileDialog, QApplication, QListWidget, QAbstractItemView, QSpacerItem
+    QPushButton, QCheckBox, QApplication, QListWidget, QAbstractItemView
 
-import cv2
 from MaskManager import MaskManager
-#from pyQT.maskSelection import MaskSelection
-#from pyQT.kernel import Kernel
-#from pyQT.curveTool import curveTool
-#from pyQT.BrightnessSaturation import BrightnessSaturation
 
 class MaskUI:
 
     def TabSwitch(self, index):
-
         if index == 0:
             print("Switched to Mask Selection tab")
+            self.maskManager.DrawCurrentImage()
         if index == 1:
             print("Switched to Group Creation tab")
             self.maskManager.DrawBaseImage()
         if index == 2:
             print("Switched to Saturation/Brightness tab")
+            self.maskManager.DrawCurrentImage()
             self.sliderBrightness.setSliderPosition(self.maskManager.getCurrentBrightness())
             self.sliderSaturation.setSliderPosition(self.maskManager.getCurrentSaturation())
         if index == 3:
             print("Switched to CurveTool tab")
+            self.maskManager.DrawCurrentImage()
         if index == 4:
             print("Switched to Blur Filter tab")
+            self.maskManager.DrawCurrentImage()
 
     def UpdateCurveToolWindow(self):
         curveToolPixmap = QPixmap('imageData/plot.png')
         self.curveToolImage.setPixmap(curveToolPixmap)
-
 
     def BuildUI(self):
         app = QApplication(sys.argv)
@@ -67,12 +61,6 @@ class MaskUI:
         imageDisplayLayout.addWidget(mainImage)
         imageDisplayLayout.addLayout(outlineLayout)
 
-        maskSelectLayout = QVBoxLayout()
-        simpleEditLayout = QVBoxLayout()
-        curveToolLayout = QVBoxLayout()
-        blurLayout = QVBoxLayout()
-
-        tabWindow = QTabWidget()
 
         #TAB 1 - MASK SELECTION
         tabMaskSelect = QWidget()
@@ -84,6 +72,7 @@ class MaskUI:
         labelGroups = QLabel("Groups")
         dropdownGroups = QComboBox()
 
+        maskSelectLayout = QVBoxLayout()
         maskSelectLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         maskSelectLayout.addWidget(labelInstance)
         maskSelectLayout.addWidget(dropdownInstances)
@@ -146,12 +135,14 @@ class MaskUI:
         layoutSaturation.addWidget(labelSaturation)
         layoutSaturation.addWidget(labelSatSlider)
 
+        simpleEditLayout = QVBoxLayout()
         simpleEditLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         simpleEditLayout.addLayout(layoutBrightness)
         simpleEditLayout.addWidget(self.sliderBrightness)
         simpleEditLayout.addLayout(layoutSaturation)
         simpleEditLayout.addWidget(labelSatSlider)
         simpleEditLayout.addWidget(self.sliderSaturation)
+
 
         #TAB 4 - CURVE TOOL
         tabCurveTool = QWidget()
@@ -187,11 +178,13 @@ class MaskUI:
         curveToolPixmap = QPixmap('imageData/plot.png')
         self.curveToolImage.setPixmap(curveToolPixmap)
 
+        curveToolLayout = QVBoxLayout()
         curveToolLayout.addLayout(lineEditLayout1)
         curveToolLayout.addLayout(lineEditLayout2)
         curveToolLayout.addLayout(lineEditLayout3)
         curveToolLayout.addWidget(colorChannelSelect)
         curveToolLayout.addWidget(self.curveToolImage)
+
 
         #TAB 5 - BLUR FILTER
         tabBlur = QWidget()
@@ -215,6 +208,7 @@ class MaskUI:
         blurIntensitySlider.setMinimum(1)
         blurIntensitySlider.setMaximum(10)
 
+        blurLayout = QVBoxLayout()
         blurLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         blurLayout.addLayout(applyBackgroundLayout)
         blurLayout.addLayout(applyFilterLayout)
@@ -231,6 +225,7 @@ class MaskUI:
         tabCurveTool.setLayout(curveToolLayout)
         tabBlur.setLayout(blurLayout)
 
+        tabWindow = QTabWidget()
         tabWindow.addTab(tabMaskSelect, "Mask Select")
         tabWindow.addTab(tabGroupCreate, "Group Create")
         tabWindow.addTab(tabSimpleEdit, "Adjustments")
@@ -242,7 +237,6 @@ class MaskUI:
 
 
         #SET FUNCTIONALITY
-
         tabWindow.currentChanged.connect(self.TabSwitch)
 
         self.outlineToggle.stateChanged.connect(self.maskManager.ShowOutlineToggle)
@@ -296,10 +290,9 @@ class MaskUI:
             lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
-
-        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses, dropdownGroups, maskList, deleteGroupDropdown)
+        self.maskManager.SetUIreferences(mainImage, dropdownInstances, dropdownClasses, dropdownGroups,
+                                         maskList, deleteGroupDropdown)
         self.maskManager.ImageSelect(dropdownImages.currentText())
-
 
         window.setWindowTitle("Mask Manager")
         window.setGeometry(100, 100, 800, 500)
