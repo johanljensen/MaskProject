@@ -12,13 +12,13 @@ class MaskUI:
     def TabSwitch(self, index):
         if index == 0:
             #print("Switched to Mask Selection tab")
-            self.maskManager.ReDrawCurrentImage()
+            self.maskManager.DisplayCurrentImage()
         if index == 1:
             #print("Switched to Group Creation tab")
-            self.maskManager.DrawBaseImage()
+            self.maskManager.DisplayBaseImage()
         if index == 2:
             #print("Switched to Saturation/Brightness tab")
-            self.maskManager.ReDrawCurrentImage()
+            self.maskManager.DisplayCurrentImage()
             self.sliderBrightness.setSliderPosition(self.maskManager.getCurrentBrightness())
             self.sliderSaturation.setSliderPosition(self.maskManager.getCurrentSaturation())
         if index == 3:
@@ -28,10 +28,10 @@ class MaskUI:
             self.lineEditSlider2.setSliderPosition(value2)
             self.lineEditSlider3.setSliderPosition(value3)
             self.colorChannelSelect.setCurrentText(channel)
-            self.maskManager.ReDrawCurrentImage()
+            self.maskManager.DisplayCurrentImage()
         if index == 4:
             #print("Switched to Blur Filter tab")
-            self.maskManager.ReDrawCurrentImage()
+            self.maskManager.DisplayCurrentImage()
 
     def UpdateCurveToolWindow(self):
         curveToolPixmap = QPixmap('imageData/plot.png')

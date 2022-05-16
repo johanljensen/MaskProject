@@ -110,21 +110,21 @@ class MaskManager:
 
         return newImage
 
-    def ReDrawCurrentImage(self):
+    def DisplayCurrentImage(self):
         pixmap = QPixmap(self.imageFullPath + self.editFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
 
         if self.showOutline is True:
             self.ShowOutline()
 
-    def DrawBaseImage(self):
+    def DisplayBaseImage(self):
         pixmap = QPixmap(self.imageFullPath + self.inputFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
 
         self.newGroupMaskWindow.clearSelection()
 
     #Completely redraws the image from the ground up, actually completely unused?
-    def DrawCurrentImage(self):
+    def RedrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
 
         for mask in self.selectedImage.maskList:
@@ -140,11 +140,20 @@ class MaskManager:
 
             totalBrightness = mask.maskSettings.brightness
             totalSaturation = mask.maskSettings.saturation
+            totalColor1 = mask.maskSettings.colorCurve1
+            totalColor2 = mask.maskSettings.colorCurve2
+            totalColor3 = mask.maskSettings.colorCurve3
+            channel = mask.maskSettings.colorChannel
 
             for settings in groupSettings:
                 totalBrightness += settings.brightness
                 totalSaturation += settings.saturation
+                totalColor1 += settings.colorCurve1
+                totalColor2 += settings.colorCurve2
+                totalColor3 += settings.colorCurve3
 
+            if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
+                drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3, channel, drawingImg)
             if totalBrightness != 0:
                 perMaskImg = self.simpleEdits.DrawBrightness(totalBrightness, perMaskImg)
             if totalSaturation != 0:
@@ -153,8 +162,6 @@ class MaskManager:
             drawingImg = np.where(mask.maskTrueFalse == True, perMaskImg, drawingImg)
 
         cv2.imwrite(self.imageFullPath + self.editFilename, drawingImg)
-        pixmap = QPixmap(self.imageFullPath + self.editFilename)
-        self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = drawingImg
 
         if self.showOutline is True:
@@ -162,41 +169,6 @@ class MaskManager:
 
     # By only operating on the bounding box of the mask, this version gains a little speed
     def DrawMask(self, mask):
-        drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
-
-        groupSettings = []
-        for cMask in self.selectedImage.classList:
-            if cMask.maskList.__contains__(mask):
-                groupSettings.append(cMask.maskSettings)
-
-        for gMask in self.selectedImage.groupList:
-            if gMask.maskList.__contains__(mask):
-                groupSettings.append(gMask.maskSettings)
-
-        totalBrightness = mask.maskSettings.brightness
-        totalSaturation = mask.maskSettings.saturation
-
-        for settings in groupSettings:
-            totalBrightness += settings.brightness
-            totalSaturation += settings.saturation
-
-        if totalBrightness != 0:
-            drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
-        if totalSaturation != 0:
-            drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
-
-        blankImg = self.baseGraphic.copy()
-        blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
-        mergedImg = np.where(mask.maskTrueFalse == True, blankImg, self.selectedImage.currentGraphic)
-
-        cv2.imwrite(self.imageFullPath + self.editFilename, mergedImg)
-        pixmap = QPixmap(self.imageFullPath + self.editFilename)
-        self.displayGraphicLabel.setPixmap(pixmap)
-        self.selectedImage.currentGraphic = mergedImg
-
-    #Draw mask with curvetool
-    def DrawMaskWithCurveTool(self, mask):
-
         drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
 
         groupSettings = []
@@ -234,8 +206,6 @@ class MaskManager:
         mergedImg = np.where(mask.maskTrueFalse == True, blankImg, self.selectedImage.currentGraphic)
 
         cv2.imwrite(self.imageFullPath + self.editFilename, mergedImg)
-        pixmap = QPixmap(self.imageFullPath + self.editFilename)
-        self.displayGraphicLabel.setPixmap(pixmap)
         self.selectedImage.currentGraphic = mergedImg
 
     def DrawSelectedMask(self):
@@ -243,10 +213,9 @@ class MaskManager:
             self.drawTimer = timeit.default_timer()
 
             for mask in self.selectedMask.GetMasks():
-                self.DrawMaskWithCurveTool(mask)
+                self.DrawMask(mask)
 
-            if self.showOutline is True:
-                self.ShowOutline()
+            self.DisplayCurrentImage()
 
     def ShowOutline(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
@@ -264,7 +233,7 @@ class MaskManager:
     def ShowOutlineToggle(self):
         print("Toggle show outline")
         self.showOutline = not self.showOutline
-        self.ReDrawCurrentImage()
+        self.DisplayCurrentImage()
 
     def ShowCreateOutlines(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
@@ -331,6 +300,8 @@ class MaskManager:
 
         if self.selectedMask.maskName == groupName:
             self.selectedMask = self.selectedImage.maskList[0]
+
+        self.RedrawCurrentImage()
 
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue
