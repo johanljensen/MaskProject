@@ -107,6 +107,7 @@ class MaskUI:
         deleteGroupDropdown = QComboBox()
         deleteGroupBtn = QPushButton("Delete mask group")
         deleteGroupBtn.setMaximumWidth(100)
+        deleteGroupBtn.setMinimumWidth(100)
 
         newGroupLayout = QVBoxLayout()
         newGroupLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
