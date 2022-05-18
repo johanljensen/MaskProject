@@ -30,12 +30,19 @@ class MaskUI:
             self.colorChannelSelect.setCurrentText(channel)
             self.maskManager.DisplayCurrentImage()
         if index == 4:
+            #print("Switched to Tone Curve tab")
+            self.maskManager.DisplayCurrentImage()
+        if index == 5:
             #print("Switched to Blur Filter tab")
             self.maskManager.DisplayCurrentImage()
 
     def UpdateCurveToolWindow(self):
-        curveToolPixmap = QPixmap('imageData/plot.png')
+        curveToolPixmap = QPixmap('imageData/curveToolPlot.png')
         self.curveToolImage.setPixmap(curveToolPixmap)
+
+    def UpdateToneCurvePlot(self):
+        toneCurvePixmap = QPixmap('imageData/toneCurvePlot.png')
+        self.toneCurveImage.setPixmap(toneCurvePixmap)
 
     def BuildUI(self):
         app = QApplication(sys.argv)
@@ -189,7 +196,7 @@ class MaskUI:
         self.colorChannelSelect.addItems(["All", "Red", "Green", "Blue"])
 
         self.curveToolImage = QLabel()
-        curveToolPixmap = QPixmap('imageData/plot.png')
+        curveToolPixmap = QPixmap('imageData/curveToolPlot.png')
         self.curveToolImage.setPixmap(curveToolPixmap)
 
         curveToolLayout = QVBoxLayout()
@@ -203,7 +210,29 @@ class MaskUI:
         curveToolLayout.addWidget(self.curveToolImage)
 
 
-        #TAB 5 - BLUR FILTER
+        #TAB 5 - TONE CURVE
+        tabToneCurve = QWidget()
+
+        self.toneCurveImage = QLabel()
+        toneCurvePixmap = QPixmap('imageData/toneCurvePlot.png')
+        self.toneCurveImage.setPixmap(toneCurvePixmap)
+
+        toneCurveDropdown = QComboBox()
+        toneCurveDropdown.addItem("No filter")
+        toneCurveDropdown.addItem("Negative reversal")
+        toneCurveDropdown.addItem("Line curve")
+        toneCurveDropdown.addItem("S-Curve")
+        toneCurveDropdown.addItem("Solarization")
+        toneCurveDropdown.addItem("Posterization")
+
+        toneCurveButton = QPushButton("Apply to mask")
+
+        toneCurveLayout = QVBoxLayout()
+        toneCurveLayout.addWidget(self.toneCurveImage)
+        toneCurveLayout.addWidget(toneCurveDropdown)
+        toneCurveLayout.addWidget(toneCurveButton)
+
+        #TAB 6 - BLUR FILTER
         tabBlur = QWidget()
 
         applyBackgroundLabel = QLabel("Apply to Background")
@@ -240,6 +269,7 @@ class MaskUI:
         tabGroupCreate.setLayout(newGroupLayout)
         tabSimpleEdit.setLayout(simpleEditLayout)
         tabCurveTool.setLayout(curveToolLayout)
+        tabToneCurve.setLayout(toneCurveLayout)
         tabBlur.setLayout(blurLayout)
 
         tabWindow = QTabWidget()
@@ -247,6 +277,7 @@ class MaskUI:
         tabWindow.addTab(tabGroupCreate, "Group Create")
         tabWindow.addTab(tabSimpleEdit, "Adjustments")
         tabWindow.addTab(tabCurveTool, "Curve Tool")
+        tabWindow.addTab(tabToneCurve, "Tone Curve")
         tabWindow.addTab(tabBlur, "Blur Filter")
 
         mainLayout.addLayout(imageDisplayLayout)
@@ -262,16 +293,19 @@ class MaskUI:
         dropdownImages.currentIndexChanged.connect(lambda: tabWindow.setCurrentIndex(0))
         dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
 
+        #Mask select
         dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
         dropdownClasses.activated.connect(self.maskManager.ClassSelect)
         dropdownGroups.activated.connect(self.maskManager.GroupSelect)
 
+        #Group create
         newGroupBtn.clicked.connect(lambda:
                                     self.maskManager.CreateGroup(newGroupName.text()))
         maskList.clicked.connect(self.maskManager.ShowCreateOutlines)
         deleteGroupBtn.clicked.connect(lambda:
                                        self.maskManager.RemoveGroup(deleteGroupDropdown.currentText()))
 
+        #Simple edits
         self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
         self.sliderBrightness.sliderReleased.connect(self.maskManager.BrightnessChangeForce)
         self.sliderBrightness.valueChanged.connect(
@@ -281,6 +315,7 @@ class MaskUI:
         self.sliderSaturation.sliderReleased.connect(self.maskManager.SaturationChangeForce)
         self.sliderSaturation.valueChanged.connect(lambda: labelSatSlider.setText(str(self.sliderSaturation.value())))
 
+        #Color curve
         self.lineEditSlider1.valueChanged.connect(
             lambda: self.maskManager.UpdateCurveTool(self.lineEditSlider1.value(), self.lineEditSlider2.value(),
                                                      self.lineEditSlider3.value(), self.colorChannelSelect.currentText()))
@@ -300,6 +335,13 @@ class MaskUI:
             lambda: self.maskManager.UpdateCurveTool(self.lineEditSlider1.value(), self.lineEditSlider2.value(),
                                                      self.lineEditSlider3.value(), self.colorChannelSelect.currentText()))
 
+        #Tone curve
+        toneCurveDropdown.currentTextChanged.connect(self.maskManager.DrawHistogram)
+        toneCurveDropdown.currentTextChanged.connect(self.UpdateToneCurvePlot)
+
+        toneCurveButton.clicked.connect(lambda: self.maskManager.ToneCurveApply(toneCurveDropdown.currentText()))
+
+        #Blur filter
         applyBackgroundCheck.stateChanged.connect(
             lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
@@ -310,9 +352,12 @@ class MaskUI:
             lambda: self.maskManager.BlurChange(blurIntensitySlider.value(),
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
+        #Mask manager
         self.maskManager.SetUIreferences(mainImage, currentSelectionLabel, dropdownInstances,
                                          dropdownClasses, dropdownGroups, maskList, deleteGroupDropdown)
         self.maskManager.ImageSelect(dropdownImages.currentText())
+        self.maskManager.DrawHistogram("No filter")
+        self.UpdateToneCurvePlot()
 
         window.setWindowTitle("Mask Manager")
         window.setGeometry(100, 100, 800, 500)

@@ -31,7 +31,7 @@ class CurveTool:
         y = (float(val1 / 1000000) * x ** 3) + (float(val2 / 1000) * x ** 2) + (
                     float(val3) * x / 100)
         pl.plot(x, y)
-        fig.savefig('imageData/plot.png')
+        fig.savefig('imageData/curveToolPlot.png')
         pl.close(fig)
         #newImage = cv2.imread(image.baseImagePath)
         b, g, r = cv2.split(image)

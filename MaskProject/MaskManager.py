@@ -8,6 +8,7 @@ from LoadedImage import LoadedImage
 from MaskDetector import MaskSelection
 from SimpleEdits import SimpleEdits
 from CurveTool import CurveTool
+from ToneCurve import ToneCurve
 from Blur import Blur
 
 
@@ -34,6 +35,7 @@ class MaskManager:
 
         self.simpleEdits = SimpleEdits()
         self.curveTool = CurveTool()
+        self.toneCurve = ToneCurve()
         self.blur = Blur()
 
         self.loadedImages = []
@@ -290,6 +292,7 @@ class MaskManager:
         self.groupDropdown.addItem(newGroup.maskName)
         self.deleteDropdown.addItem(newGroup.maskName)
         self.selectedImage.groupList.append(newGroup)
+        self.selectedMask = newGroup
 
     def RemoveGroup(self, groupName):
         for group in self.selectedImage.groupList:
@@ -331,6 +334,15 @@ class MaskManager:
         value3 = self.selectedMask.maskSettings.colorCurve3
         channel = self.selectedMask.maskSettings.colorChannel
         return value1, value2, value3, channel
+
+    def DrawHistogram(self, dropdownSelection):
+        print(dropdownSelection)
+        self.toneCurve.DrawHistogram(dropdownSelection, self.selectedImage.currentGraphic)
+
+    def ToneCurveApply(self, dropdownSelection):
+        self.toneCurve.ApplyFilter(dropdownSelection, self.selectedImage.currentGraphic)
+
+
 
     def BlurChange(self, blurValue, backgroundState, filterState):
         blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,
