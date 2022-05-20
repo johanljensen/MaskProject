@@ -71,15 +71,15 @@ class ToneCurve:
         elif filterName == "Posterization":
             filteredImage = self.Posterization(currentGraphic)
 
-        cv2.imshow("Filter", filteredImage)
+        return filteredImage
 
     def Reversal(self, currentGraphic):
-        print("Reverse the coloration")
+        #print("Reverse the coloration")
         reversedImage = 255 - currentGraphic
         return reversedImage
 
     def LineCurve(self, currentGraphic):
-        print("Lining the curve")
+        #print("Lining the curve")
         look_up_table = np.zeros((256, 1), dtype='uint8')
         for i in range(256):
             if i < 256 / 2:
@@ -89,21 +89,21 @@ class ToneCurve:
         return cv2.LUT(currentGraphic, look_up_table)
 
     def S_ToneCurve(self, currentGraphic):
-        print("S_Curving")
+        #print("S_Curving")
         look_up_table = np.zeros((256,1), dtype='uint8')
         for i in range(256):
             look_up_table[i][0] = 255 * (np.sin(np.pi * (i/255 - 1/2)) + 1) / 2
         return cv2.LUT(currentGraphic, look_up_table)
 
     def Solarization(self, currentGraphic):
-        print("Solar power")
+        #print("Solar power")
         look_up_table = np.zeros((256, 1), dtype='uint8')
         for i in range(256):
             look_up_table[i][0] = (np.sin(3 * np.pi * (i / 255 + 1 / 2)) + 1) * 255 / 2
         return cv2.LUT(currentGraphic, look_up_table)
 
     def Posterization(self, currentGraphic):
-        print("Original poster")
+        #print("Poster woahster")
         step = 4
         look_up_table = np.zeros((256, 1), dtype='uint8')
         split = int(256 / (step - 1))

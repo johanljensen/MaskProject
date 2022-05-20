@@ -30,3 +30,6 @@ class Mask:
         self.maskSettings.colorCurve2 = value2
         self.maskSettings.colorCurve3 = value3
         self.maskSettings.colorChannel = colorChannel
+
+    def SetToneCurveFilter(self, filterName):
+        self.maskSettings.toneCurve = filterName

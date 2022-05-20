@@ -6,4 +6,5 @@ class MaskSettings:
         self.colorCurve1 = 0
         self.colorCurve2 = 0
         self.colorCurve3 = 0
-        self.colorChannel = ""
+        self.colorChannel = "All"
+        self.toneCurve = "No Filter"

@@ -31,8 +31,13 @@ class MaskGroup():
         self.maskSettings.colorChannel = colorChannel
 
         for mask in self.maskList:
-            if mask.maskSettings.colorChannel == "":
-                mask.maskSettings.colorChannel = colorChannel
+            mask.maskSettings.colorChannel = colorChannel
+
+    def SetToneCurveFilter(self, filterName):
+        self.maskSettings.toneCurve = filterName
+
+        for mask in self.maskList:
+            mask.maskSettings.toneCurve = filterName
 
     def RefreshMask(self):
         self.maskTrueFalse = np.copy(self.maskList[0].maskTrueFalse)

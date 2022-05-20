@@ -27,11 +27,11 @@ class MaskManager:
         self.displayGraphicLabel = None
         self.currentSelectionText = None
 
-        self.instanceDropdown = None
-        self.classDropdown = None
-        self.groupDropdown = None
-        self.newGroupMaskWindow = None
-        self.deleteDropdown = None
+        self.instanceMaskList = None
+        self.classMaskList = None
+        self.groupMaskList = None
+        self.newGroupMaskList = None
+        self.deleteGroupList = None
 
         self.simpleEdits = SimpleEdits()
         self.curveTool = CurveTool()
@@ -46,31 +46,31 @@ class MaskManager:
         self.drawTimer = timeit.default_timer()
 
     def SetUIreferences(self, imageLabel, currentSelectionText,
-                        instanceDropdown, classDropDown, groupDropdown, maskWindow, deleteDropdown):
+                        instanceDropdown, classDropDown, groupDropdown, newMaskList, deleteGroupList):
         self.displayGraphicLabel = imageLabel
         self.currentSelectionText = currentSelectionText
-        self.instanceDropdown = instanceDropdown
-        self.classDropdown = classDropDown
-        self.groupDropdown = groupDropdown
-        self.newGroupMaskWindow = maskWindow
-        self.deleteDropdown = deleteDropdown
+        self.instanceMaskList = instanceDropdown
+        self.classMaskList = classDropDown
+        self.groupMaskList = groupDropdown
+        self.newGroupMaskList = newMaskList
+        self.deleteGroupList = deleteGroupList
 
     def SetMaskLists(self):
-        self.instanceDropdown.clear()
-        self.newGroupMaskWindow.clear()
+        self.instanceMaskList.clear()
+        self.newGroupMaskList.clear()
         for mask in self.selectedImage.maskList:
-            self.instanceDropdown.addItem(mask.maskName)
-            self.newGroupMaskWindow.addItem(mask.maskName)
+            self.instanceMaskList.addItem(mask.maskName)
+            self.newGroupMaskList.addItem(mask.maskName)
 
-        self.classDropdown.clear()
+        self.classMaskList.clear()
         for maskClass in self.selectedImage.classList:
-            self.classDropdown.addItem(maskClass.maskName)
+            self.classMaskList.addItem(maskClass.maskName)
 
-        self.groupDropdown.clear()
-        self.deleteDropdown.clear()
+        self.groupMaskList.clear()
+        self.deleteGroupList.clear()
         for maskGroup in self.selectedImage.groupList:
-            self.groupDropdown.addItem(maskGroup.maskName)
-            self.deleteDropdown.addItem(maskGroup.maskName)
+            self.groupMaskList.addItem(maskGroup.maskName)
+            self.deleteGroupList.addItem(maskGroup.maskName)
 
         self.SetSelectedMask(self.selectedImage.maskList[0], "Mask")
 
@@ -100,6 +100,9 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.editFilename))
         self.SetMaskLists()
 
+        if self.showOutline:
+            self.ShowSelectedOutline()
+
     def CreateMaskImage(self, imageName):
         newImage = LoadedImage()
         newImage.imageName = imageName
@@ -119,15 +122,15 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(pixmap)
 
         if self.showOutline is True:
-            self.ShowOutline()
+            self.ShowSelectedOutline()
 
     def DisplayBaseImage(self):
         pixmap = QPixmap(self.imageFullPath + self.inputFilename)
         self.displayGraphicLabel.setPixmap(pixmap)
 
-        self.newGroupMaskWindow.clearSelection()
+        self.newGroupMaskList.clearSelection()
 
-    #Completely redraws the image from the ground up, actually completely unused?
+    #Completely redraws the image from the ground up
     def RedrawCurrentImage(self):
         drawingImg = self.baseGraphic.copy()
 
@@ -147,7 +150,6 @@ class MaskManager:
             totalColor1 = mask.maskSettings.colorCurve1
             totalColor2 = mask.maskSettings.colorCurve2
             totalColor3 = mask.maskSettings.colorCurve3
-            channel = mask.maskSettings.colorChannel
 
             for settings in groupSettings:
                 totalBrightness += settings.brightness
@@ -157,11 +159,14 @@ class MaskManager:
                 totalColor3 += settings.colorCurve3
 
             if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
-                drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3, channel, drawingImg)
+                drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
+                                                            mask.maskSettings.colorChannel, drawingImg)
             if totalBrightness != 0:
                 perMaskImg = self.simpleEdits.DrawBrightness(totalBrightness, perMaskImg)
             if totalSaturation != 0:
                 perMaskImg = self.simpleEdits.DrawSaturation(totalSaturation, perMaskImg)
+
+            drawingImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, drawingImg)
 
             drawingImg = np.where(mask.maskTrueFalse == True, perMaskImg, drawingImg)
 
@@ -169,9 +174,9 @@ class MaskManager:
         self.selectedImage.currentGraphic = drawingImg
 
         if self.showOutline is True:
-            self.ShowOutline()
+            self.ShowSelectedOutline()
 
-    # By only operating on the bounding box of the mask, this version gains a little speed
+    # Draw the specified mask while keeping the rest of the image the same
     def DrawMask(self, mask):
         drawingImg = self.baseGraphic.copy()[mask.minX:mask.maxX, mask.minY:mask.maxY]
 
@@ -189,7 +194,6 @@ class MaskManager:
         totalColor1 = mask.maskSettings.colorCurve1
         totalColor2 = mask.maskSettings.colorCurve2
         totalColor3 = mask.maskSettings.colorCurve3
-        channel = mask.maskSettings.colorChannel
 
         for settings in groupSettings:
             totalBrightness += settings.brightness
@@ -199,11 +203,14 @@ class MaskManager:
             totalColor3 += settings.colorCurve3
 
         if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
-            drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3, channel, drawingImg)
+            drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
+                                                        mask.maskSettings.colorChannel, drawingImg)
         if totalBrightness != 0:
             drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
         if totalSaturation != 0:
             drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
+
+        drawingImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, drawingImg)
 
         blankImg = self.baseGraphic.copy()
         blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
@@ -221,7 +228,7 @@ class MaskManager:
 
             self.DisplayCurrentImage()
 
-    def ShowOutline(self):
+    def ShowSelectedOutline(self):
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
 
         for mask in self.selectedMask.GetMasks():
@@ -243,7 +250,7 @@ class MaskManager:
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
 
         outLineMasks = []
-        for name in self.newGroupMaskWindow.selectedItems():
+        for name in self.newGroupMaskList.selectedItems():
             for mask in self.selectedImage.maskList:
                 if name.text() == mask.maskName:
                     outLineMasks.append(mask)
@@ -258,22 +265,57 @@ class MaskManager:
         outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
         self.displayGraphicLabel.setPixmap(outlinePixmap)
 
+    def ShowGroupOutlines(self):
+        outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
+
+        outLineMasks = []
+        for maskGroup in self.selectedImage.groupList:
+            if self.deleteGroupList.selectedItems()[0].text() == maskGroup.maskName:
+                for mask in maskGroup.GetMasks():
+                    outLineMasks.append(mask)
+
+        for mask in outLineMasks:
+            converted = mask.maskBlackWhite.astype(np.uint8)
+            contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
+
+        outlines = np.where(outlines > 1, outlines, self.selectedImage.baseGraphic)
+        cv2.imwrite(self.imageFullPath + self.outlineFilename, outlines)
+        outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
+        self.displayGraphicLabel.setPixmap(outlinePixmap)
+
     def InstanceSelect(self, index):
         #print("Selected instance: " + str(index))
+        if index == -1:
+            return
         self.SetSelectedMask(self.selectedImage.maskList[index], "Mask")
+        self.classMaskList.clearSelection()
+        self.groupMaskList.clearSelection()
+
         if self.showOutline is True:
-            self.ShowOutline()
+            self.ShowSelectedOutline()
 
     def ClassSelect(self, index):
         #print("Selected class: " + str(index))
+        if index == -1:
+            return
         self.SetSelectedMask(self.selectedImage.classList[index], "Class")
+        self.instanceMaskList.clearSelection()
+        self.groupMaskList.clearSelection()
+
         if self.showOutline is True:
-            self.ShowOutline()
+            self.ShowSelectedOutline()
+
     def GroupSelect(self, index):
         #print("Selected group: " + str(index))
+        if index == -1:
+            return
         self.SetSelectedMask(self.selectedImage.groupList[index], "Group")
+        self.instanceMaskList.clearSelection()
+        self.classMaskList.clearSelection()
+
         if self.showOutline is True:
-            self.ShowOutline()
+            self.ShowSelectedOutline()
 
     def CreateGroup(self, newName):
         if newName == "":
@@ -285,26 +327,36 @@ class MaskManager:
                 return
 
         newGroup = MaskGroup(newName)
-        for item in self.newGroupMaskWindow.selectedItems():
+        for item in self.newGroupMaskList.selectedItems():
             for mask in self.selectedImage.maskList:
                 if item.text() == mask.maskName:
                     newGroup.AddMask(mask)
-        self.groupDropdown.addItem(newGroup.maskName)
-        self.deleteDropdown.addItem(newGroup.maskName)
+        self.groupMaskList.addItem(newGroup.maskName)
+        self.deleteGroupList.addItem(newGroup.maskName)
         self.selectedImage.groupList.append(newGroup)
-        self.selectedMask = newGroup
+        self.SetSelectedMask(newGroup, "Group")
 
-    def RemoveGroup(self, groupName):
+    def RemoveGroup(self):
+        groupName = self.deleteGroupList.selectedItems()[0].text()
+
+        print(groupName)
         for group in self.selectedImage.groupList:
             if group.maskName == groupName:
                 self.selectedImage.groupList.remove(group)
-        index = self.deleteDropdown.findText(groupName)
-        self.deleteDropdown.removeItem(index)
-        index = self.groupDropdown.findText(groupName)
-        self.groupDropdown.removeItem(index)
+        for i in range(len(self.deleteGroupList)):
+            print(self.deleteGroupList.item(i).text())
+            print(groupName)
+            print(self.deleteGroupList.item(i).text() == groupName)
+            if self.deleteGroupList.item(i).text() == groupName:
+                self.deleteGroupList.takeItem(i)
+
+        for i in range(len(self.groupMaskList)):
+            print(self.groupMaskList.item(i).text())
+            if self.groupMaskList.item(i).text() == groupName:
+                self.groupMaskList.takeItem(i)
 
         if self.selectedMask.maskName == groupName:
-            self.selectedMask = self.selectedImage.maskList[0]
+            self.SetSelectedMask(self.selectedImage.maskList[0], "Mask")
 
         self.RedrawCurrentImage()
 
@@ -336,13 +388,11 @@ class MaskManager:
         return value1, value2, value3, channel
 
     def DrawHistogram(self, dropdownSelection):
-        print(dropdownSelection)
         self.toneCurve.DrawHistogram(dropdownSelection, self.selectedImage.currentGraphic)
 
     def ToneCurveApply(self, dropdownSelection):
-        self.toneCurve.ApplyFilter(dropdownSelection, self.selectedImage.currentGraphic)
-
-
+        self.selectedMask.SetToneCurveFilter(dropdownSelection)
+        self.DrawSelectedMask()
 
     def BlurChange(self, blurValue, backgroundState, filterState):
         blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,

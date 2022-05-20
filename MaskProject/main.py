@@ -10,30 +10,38 @@ from MaskManager import MaskManager
 class MaskUI:
 
     def TabSwitch(self, index):
+        self.maskManager.DisplayCurrentImage()
+
         if index == 0:
             #print("Switched to Mask Selection tab")
-            self.maskManager.DisplayCurrentImage()
+            if not self.maskSelectPage.isVisible():
+                self.maskSelectPage.show()
+                self.createGroupPage.hide()
+
         if index == 1:
-            #print("Switched to Group Creation tab")
-            self.maskManager.DisplayBaseImage()
-        if index == 2:
             #print("Switched to Saturation/Brightness tab")
-            self.maskManager.DisplayCurrentImage()
             self.sliderBrightness.setSliderPosition(self.maskManager.getCurrentBrightness())
             self.sliderSaturation.setSliderPosition(self.maskManager.getCurrentSaturation())
-        if index == 3:
+        if index == 2:
             #print("Switched to CurveTool tab")
             value1, value2, value3, channel = self.maskManager.getCurrentColorValues()
             self.lineEditSlider1.setSliderPosition(value1)
             self.lineEditSlider2.setSliderPosition(value2)
             self.lineEditSlider3.setSliderPosition(value3)
             self.colorChannelSelect.setCurrentText(channel)
-            self.maskManager.DisplayCurrentImage()
-        if index == 4:
+        #if index == 3:
             #print("Switched to Tone Curve tab")
-            self.maskManager.DisplayCurrentImage()
-        if index == 5:
+        #if index == 4:
             #print("Switched to Blur Filter tab")
+
+    def ToggleMaskSelectGroupCreate(self):
+        if self.maskSelectPage.isVisible():
+            self.maskSelectPage.setVisible(False)
+            self.createGroupPage.setVisible(True)
+            self.maskManager.DisplayBaseImage()
+        else:
+            self.maskSelectPage.setVisible(True)
+            self.createGroupPage.setVisible(False)
             self.maskManager.DisplayCurrentImage()
 
     def UpdateCurveToolWindow(self):
@@ -81,27 +89,28 @@ class MaskUI:
         tabMaskSelect = QWidget()
 
         labelInstance = QLabel("Instance Selection")
-        dropdownInstances = QComboBox()
+        listviewInstances = QListWidget()
         labelClasses = QLabel("Classes")
-        dropdownClasses = QComboBox()
+        listviewClasses = QListWidget()
         labelGroups = QLabel("Groups")
-        dropdownGroups = QComboBox()
+        listviewGroups = QListWidget()
 
+        openCreateGroupBtn = QPushButton("Create Group")
+
+        self.maskSelectPage = QWidget()
         maskSelectLayout = QVBoxLayout()
         maskSelectLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         maskSelectLayout.addWidget(labelInstance)
-        maskSelectLayout.addWidget(dropdownInstances)
+        maskSelectLayout.addWidget(listviewInstances)
         maskSelectLayout.addWidget(labelClasses)
-        maskSelectLayout.addWidget(dropdownClasses)
+        maskSelectLayout.addWidget(listviewClasses)
         maskSelectLayout.addWidget(labelGroups)
-        maskSelectLayout.addWidget(dropdownGroups)
+        maskSelectLayout.addWidget(listviewGroups)
+        maskSelectLayout.addWidget(openCreateGroupBtn)
+        self.maskSelectPage.setLayout(maskSelectLayout)
 
-
-        #TAB 2 - CREATE GROUP
-        tabGroupCreate = QWidget()
-
-        newGroupName = QLineEdit("Insert name")
         newGroupBtn = QPushButton("Create group with selected masks")
+        newGroupName = QLineEdit("Insert name")
 
         maskList = QListWidget()
         maskList.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -111,20 +120,29 @@ class MaskUI:
         createBtnNameLayout.addWidget(newGroupBtn)
         createBtnNameLayout.addWidget(newGroupName)
 
-        deleteGroupDropdown = QComboBox()
-        deleteGroupBtn = QPushButton("Delete mask group")
-        deleteGroupBtn.setMaximumWidth(100)
-        deleteGroupBtn.setMinimumWidth(100)
+        deleteGroupList = QListWidget()
+        deleteGroupBtn = QPushButton("Delete selected mask group")
+        deleteGroupBtn.setMaximumWidth(150)
+        deleteGroupBtn.setMinimumWidth(150)
 
-        newGroupLayout = QVBoxLayout()
-        newGroupLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        newGroupLayout.addLayout(createBtnNameLayout)
-        newGroupLayout.addWidget(maskList)
-        newGroupLayout.addWidget(deleteGroupDropdown)
-        newGroupLayout.addWidget(deleteGroupBtn)
+        closeCreateGroupBtn = QPushButton("Return to Mask Select")
 
+        self.createGroupPage = QWidget()
+        createGroupLayout = QVBoxLayout()
+        createGroupLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        createGroupLayout.addWidget(maskList)
+        createGroupLayout.addLayout(createBtnNameLayout)
+        createGroupLayout.addWidget(deleteGroupList)
+        createGroupLayout.addWidget(deleteGroupBtn)
+        createGroupLayout.addWidget(closeCreateGroupBtn)
+        self.createGroupPage.setLayout(createGroupLayout)
+        self.createGroupPage.setVisible(False)
 
-        #TAB 3 - SIMPLE EDITS
+        maskManagementLayout = QVBoxLayout()
+        maskManagementLayout.addWidget(self.maskSelectPage)
+        maskManagementLayout.addWidget(self.createGroupPage)
+
+        #TAB 2 - SIMPLE EDITS
         tabSimpleEdit = QWidget()
 
         labelBrightness = QLabel("Brightness")
@@ -159,7 +177,7 @@ class MaskUI:
         simpleEditLayout.addWidget(self.sliderSaturation)
 
 
-        #TAB 4 - CURVE TOOL
+        #TAB 3 - CURVE TOOL
         tabCurveTool = QWidget()
 
         lineEditLabel1 = QLabel("Value 1:")
@@ -210,7 +228,7 @@ class MaskUI:
         curveToolLayout.addWidget(self.curveToolImage)
 
 
-        #TAB 5 - TONE CURVE
+        #TAB 4 - TONE CURVE
         tabToneCurve = QWidget()
 
         self.toneCurveImage = QLabel()
@@ -232,7 +250,8 @@ class MaskUI:
         toneCurveLayout.addWidget(toneCurveDropdown)
         toneCurveLayout.addWidget(toneCurveButton)
 
-        #TAB 6 - BLUR FILTER
+
+        #TAB 5 - BLUR FILTER
         tabBlur = QWidget()
 
         applyBackgroundLabel = QLabel("Apply to Background")
@@ -265,8 +284,7 @@ class MaskUI:
         #SET LAYOUT
         mainLayout = QHBoxLayout()
 
-        tabMaskSelect.setLayout(maskSelectLayout)
-        tabGroupCreate.setLayout(newGroupLayout)
+        tabMaskSelect.setLayout(maskManagementLayout)
         tabSimpleEdit.setLayout(simpleEditLayout)
         tabCurveTool.setLayout(curveToolLayout)
         tabToneCurve.setLayout(toneCurveLayout)
@@ -274,7 +292,6 @@ class MaskUI:
 
         tabWindow = QTabWidget()
         tabWindow.addTab(tabMaskSelect, "Mask Select")
-        tabWindow.addTab(tabGroupCreate, "Group Create")
         tabWindow.addTab(tabSimpleEdit, "Adjustments")
         tabWindow.addTab(tabCurveTool, "Curve Tool")
         tabWindow.addTab(tabToneCurve, "Tone Curve")
@@ -291,19 +308,20 @@ class MaskUI:
 
         dropdownImages.currentTextChanged.connect(self.maskManager.ImageSelect)
         dropdownImages.currentIndexChanged.connect(lambda: tabWindow.setCurrentIndex(0))
-        dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
+        #dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
 
         #Mask select
-        dropdownInstances.activated.connect(self.maskManager.InstanceSelect)
-        dropdownClasses.activated.connect(self.maskManager.ClassSelect)
-        dropdownGroups.activated.connect(self.maskManager.GroupSelect)
+        listviewInstances.currentRowChanged.connect(self.maskManager.InstanceSelect)
+        listviewClasses.currentRowChanged.connect(self.maskManager.ClassSelect)
+        listviewGroups.currentRowChanged.connect(self.maskManager.GroupSelect)
+        openCreateGroupBtn.clicked.connect(self.ToggleMaskSelectGroupCreate)
 
-        #Group create
+        maskList.clicked.connect(self.maskManager.ShowCreateOutlines)
         newGroupBtn.clicked.connect(lambda:
                                     self.maskManager.CreateGroup(newGroupName.text()))
-        maskList.clicked.connect(self.maskManager.ShowCreateOutlines)
-        deleteGroupBtn.clicked.connect(lambda:
-                                       self.maskManager.RemoveGroup(deleteGroupDropdown.currentText()))
+        deleteGroupList.clicked.connect(self.maskManager.ShowGroupOutlines)
+        deleteGroupBtn.clicked.connect(self.maskManager.RemoveGroup)
+        closeCreateGroupBtn.clicked.connect(self.ToggleMaskSelectGroupCreate)
 
         #Simple edits
         self.sliderBrightness.valueChanged.connect(self.maskManager.BrightnessChange)
@@ -353,8 +371,8 @@ class MaskUI:
                                                 applyBackgroundCheck.checkState(), applyFilterCheck.checkState()))
 
         #Mask manager
-        self.maskManager.SetUIreferences(mainImage, currentSelectionLabel, dropdownInstances,
-                                         dropdownClasses, dropdownGroups, maskList, deleteGroupDropdown)
+        self.maskManager.SetUIreferences(mainImage, currentSelectionLabel, listviewInstances,
+                                         listviewClasses, listviewGroups, maskList, deleteGroupList)
         self.maskManager.ImageSelect(dropdownImages.currentText())
         self.maskManager.DrawHistogram("No filter")
         self.UpdateToneCurvePlot()
@@ -363,6 +381,7 @@ class MaskUI:
         window.setGeometry(100, 100, 800, 500)
         window.setLayout(mainLayout)
         window.setWindowFlags(Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+
         window.show()
         window.setFixedSize(window.size())
         sys.exit(app.exec_())
