@@ -131,7 +131,7 @@ class MaskManager:
         self.newGroupMaskList.clearSelection()
 
     #Completely redraws the image from the ground up
-    def RedrawCurrentImage(self):
+    def DrawFullImage(self):
         drawingImg = self.baseGraphic.copy()
 
         for mask in self.selectedImage.maskList:
@@ -158,15 +158,15 @@ class MaskManager:
                 totalColor2 += settings.colorCurve2
                 totalColor3 += settings.colorCurve3
 
-            if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
-                drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
-                                                            mask.maskSettings.colorChannel, drawingImg)
             if totalBrightness != 0:
                 perMaskImg = self.simpleEdits.DrawBrightness(totalBrightness, perMaskImg)
             if totalSaturation != 0:
                 perMaskImg = self.simpleEdits.DrawSaturation(totalSaturation, perMaskImg)
-
-            drawingImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, drawingImg)
+            if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
+                perMaskImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
+                                                            mask.maskSettings.colorChannel, perMaskImg)
+            if mask.maskSettings.toneCurve != "No Filter":
+                perMaskImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, perMaskImg)
 
             drawingImg = np.where(mask.maskTrueFalse == True, perMaskImg, drawingImg)
 
@@ -202,15 +202,15 @@ class MaskManager:
             totalColor2 += settings.colorCurve2
             totalColor3 += settings.colorCurve3
 
-        if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
-            drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
-                                                        mask.maskSettings.colorChannel, drawingImg)
         if totalBrightness != 0:
             drawingImg = self.simpleEdits.DrawBrightness(totalBrightness, drawingImg)
         if totalSaturation != 0:
             drawingImg = self.simpleEdits.DrawSaturation(totalSaturation, drawingImg)
-
-        drawingImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, drawingImg)
+        if totalColor1 != 0 or totalColor2 != 0 or totalColor3 != 0:
+            drawingImg = self.curveTool.ApplyColorCurve(totalColor1, totalColor2, totalColor3,
+                                                        mask.maskSettings.colorChannel, drawingImg)
+        if mask.maskSettings.toneCurve != "No Filter":
+            drawingImg = self.toneCurve.ApplyFilter(mask.maskSettings.toneCurve, drawingImg)
 
         blankImg = self.baseGraphic.copy()
         blankImg[mask.minX:mask.maxX, mask.minY:mask.maxY] = drawingImg
@@ -232,7 +232,7 @@ class MaskManager:
         outlines = np.ones(self.selectedImage.currentGraphic.shape, dtype=np.uint8)
 
         for mask in self.selectedMask.GetMasks():
-            converted = mask.maskBlackWhite.astype(np.uint8)
+            converted = mask.maskTrueFalse.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
 
@@ -242,7 +242,7 @@ class MaskManager:
         self.displayGraphicLabel.setPixmap(outlinePixmap)
 
     def ShowOutlineToggle(self):
-        print("Toggle show outline")
+        #print("Toggle show outline")
         self.showOutline = not self.showOutline
         self.DisplayCurrentImage()
 
@@ -256,7 +256,7 @@ class MaskManager:
                     outLineMasks.append(mask)
 
         for mask in outLineMasks:
-            converted = mask.maskBlackWhite.astype(np.uint8)
+            converted = mask.maskTrueFalse.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
 
@@ -275,7 +275,7 @@ class MaskManager:
                     outLineMasks.append(mask)
 
         for mask in outLineMasks:
-            converted = mask.maskBlackWhite.astype(np.uint8)
+            converted = mask.maskTrueFalse.astype(np.uint8)
             contours = cv2.findContours(converted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(outlines, contours[0], -1, (36, 255, 12), thickness=2)
 
@@ -284,33 +284,33 @@ class MaskManager:
         outlinePixmap = QPixmap(self.imageFullPath + self.outlineFilename)
         self.displayGraphicLabel.setPixmap(outlinePixmap)
 
-    def InstanceSelect(self, index):
-        #print("Selected instance: " + str(index))
-        if index == -1:
+    def InstanceSelect(self):
+        #print("Selected instance: " + str(self.instanceMaskList.currentRow()))
+        if self.instanceMaskList.currentRow() == -1:
             return
-        self.SetSelectedMask(self.selectedImage.maskList[index], "Mask")
+        self.SetSelectedMask(self.selectedImage.maskList[self.instanceMaskList.currentRow()], "Mask")
         self.classMaskList.clearSelection()
         self.groupMaskList.clearSelection()
 
         if self.showOutline is True:
             self.ShowSelectedOutline()
 
-    def ClassSelect(self, index):
-        #print("Selected class: " + str(index))
-        if index == -1:
+    def ClassSelect(self):
+        #print("Selected class: " + str(self.classMaskList.currentRow()))
+        if self.classMaskList.currentRow() == -1:
             return
-        self.SetSelectedMask(self.selectedImage.classList[index], "Class")
+        self.SetSelectedMask(self.selectedImage.classList[self.classMaskList.currentRow()], "Class")
         self.instanceMaskList.clearSelection()
         self.groupMaskList.clearSelection()
 
         if self.showOutline is True:
             self.ShowSelectedOutline()
 
-    def GroupSelect(self, index):
-        #print("Selected group: " + str(index))
-        if index == -1:
+    def GroupSelect(self):
+        #print("Selected group: " + str(self.groupMaskList.currentRow()))
+        if self.groupMaskList.currentRow() == -1:
             return
-        self.SetSelectedMask(self.selectedImage.groupList[index], "Group")
+        self.SetSelectedMask(self.selectedImage.groupList[self.groupMaskList.currentRow()], "Group")
         self.instanceMaskList.clearSelection()
         self.classMaskList.clearSelection()
 
@@ -339,26 +339,24 @@ class MaskManager:
     def RemoveGroup(self):
         groupName = self.deleteGroupList.selectedItems()[0].text()
 
-        print(groupName)
         for group in self.selectedImage.groupList:
             if group.maskName == groupName:
                 self.selectedImage.groupList.remove(group)
         for i in range(len(self.deleteGroupList)):
-            print(self.deleteGroupList.item(i).text())
-            print(groupName)
-            print(self.deleteGroupList.item(i).text() == groupName)
             if self.deleteGroupList.item(i).text() == groupName:
                 self.deleteGroupList.takeItem(i)
+                break
 
         for i in range(len(self.groupMaskList)):
             print(self.groupMaskList.item(i).text())
             if self.groupMaskList.item(i).text() == groupName:
                 self.groupMaskList.takeItem(i)
+                break
 
         if self.selectedMask.maskName == groupName:
             self.SetSelectedMask(self.selectedImage.maskList[0], "Mask")
 
-        self.RedrawCurrentImage()
+        self.DrawFullImage()
 
     def BrightnessChange(self, sliderValue):
         self.selectedMask.maskSettings.brightness = sliderValue

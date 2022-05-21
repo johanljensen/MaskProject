@@ -311,9 +311,9 @@ class MaskUI:
         #dropdownImages.currentIndexChanged.connect(lambda: self.outlineToggle.setChecked(False))
 
         #Mask select
-        listviewInstances.currentRowChanged.connect(self.maskManager.InstanceSelect)
-        listviewClasses.currentRowChanged.connect(self.maskManager.ClassSelect)
-        listviewGroups.currentRowChanged.connect(self.maskManager.GroupSelect)
+        listviewInstances.itemClicked.connect(self.maskManager.InstanceSelect)
+        listviewClasses.itemClicked.connect(self.maskManager.ClassSelect)
+        listviewGroups.itemClicked.connect(self.maskManager.GroupSelect)
         openCreateGroupBtn.clicked.connect(self.ToggleMaskSelectGroupCreate)
 
         maskList.clicked.connect(self.maskManager.ShowCreateOutlines)

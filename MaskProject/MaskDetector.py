@@ -12,7 +12,6 @@ class MaskSelection:
         self.uniqueClasses = []
 
     def DetectMasks(self, imagePath):
-
         mask_array = np.load(imagePath + 'Image_mask.npy')
         class_array = np.load(imagePath + 'class_array.npy')
         num_instances = mask_array.shape[0]
@@ -25,10 +24,10 @@ class MaskSelection:
 
             maskName = "" + str(i) + " - " + classDict.coco_dict[j]
             maskTrueFalse = mask_array[:, :, i:(i + 1)]
-            maskBlackWhite = np.zeros_like(maskTrueFalse, dtype=np.uint8)
-            maskBlackWhite = np.where(maskTrueFalse == True, 255, maskBlackWhite)
+            #maskBlackWhite = np.zeros_like(maskTrueFalse, dtype=np.uint8)
+            #maskBlackWhite = np.where(maskTrueFalse == True, 255, maskBlackWhite)
 
-            self.maskList.append(Mask(maskTrueFalse, maskBlackWhite, maskName, classDict.coco_dict[j]))
+            self.maskList.append(Mask(maskTrueFalse, maskName, classDict.coco_dict[j]))
             #cv2.imshow("hey:" + str(i), maskBlackWhite)
 
             if classDict.coco_dict[j] not in self.uniqueClasses:

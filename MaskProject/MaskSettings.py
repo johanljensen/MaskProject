@@ -1,5 +1,4 @@
 class MaskSettings:
-
     def __init__(self):
         self.brightness = 0
         self.saturation = 0

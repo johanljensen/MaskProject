@@ -8,7 +8,7 @@ class MaskGroup():
         self.maskList = []
         self.maskSettings = MaskSettings()
         self.maskName = name
-        self.maskBlackWhite = None
+        #self.maskBlackWhite = None
         self.maskTrueFalse = None
 
     def GetMasks(self):
@@ -41,9 +41,9 @@ class MaskGroup():
 
     def RefreshMask(self):
         self.maskTrueFalse = np.copy(self.maskList[0].maskTrueFalse)
-        self.maskBlackWhite = np.copy(self.maskList[0].maskBlackWhite)
+        #self.maskBlackWhite = np.copy(self.maskList[0].maskBlackWhite)
 
         if len(self.maskList) > 1:
             for x in range(1, len(self.maskList)):
                 self.maskTrueFalse = np.where(self.maskList[x].maskTrueFalse == True, True, self.maskTrueFalse)
-                self.maskBlackWhite = np.where(self.maskList[x].maskTrueFalse == True, self.maskList[x].maskBlackWhite, self.maskBlackWhite)
+                #self.maskBlackWhite = np.where(self.maskList[x].maskTrueFalse == True, self.maskList[x].maskBlackWhite, self.maskBlackWhite)
