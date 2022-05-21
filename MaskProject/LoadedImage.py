@@ -13,4 +13,3 @@ class LoadedImage:
         self.maskList = []
         self.classList = []
         self.groupList = []
-        self.selectedMask = None

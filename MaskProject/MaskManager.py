@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPixmap
 
 from MaskGroup import MaskGroup
 from LoadedImage import LoadedImage
-from MaskDetector import MaskSelection
+from MaskDetector import MaskDetector
 from SimpleEdits import SimpleEdits
 from CurveTool import CurveTool
 from ToneCurve import ToneCurve
@@ -33,6 +33,7 @@ class MaskManager:
         self.newGroupMaskList = None
         self.deleteGroupList = None
 
+        self.maskDetector = MaskDetector()
         self.simpleEdits = SimpleEdits()
         self.curveTool = CurveTool()
         self.toneCurve = ToneCurve()
@@ -79,7 +80,7 @@ class MaskManager:
         self.currentSelectionText.setText("Current mask selection: " + typeText + "_" + mask.maskName)
 
     def GetImageMasks(self, loadedImage):
-        loadedImage.maskList, loadedImage.classList = MaskSelection().DetectMasks(self.imageFullPath)
+        loadedImage.maskList, loadedImage.classList = self.maskDetector.DetectMasks(self.imageFullPath)
 
     def ImageSelect(self, imageName):
         #print("Switched to image: " + imageName)

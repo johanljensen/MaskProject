@@ -4,12 +4,7 @@ from Mask import Mask
 from MaskGroup import MaskGroup
 
 
-class MaskSelection:
-
-    def __init__(self):
-        self.maskList = []
-        self.classList = []
-        self.uniqueClasses = []
+class MaskDetector:
 
     def DetectMasks(self, imagePath):
         mask_array = np.load(imagePath + 'Image_mask.npy')
@@ -19,6 +14,10 @@ class MaskSelection:
 
         classDict = ClassDict
 
+        maskList = []
+        classList = []
+        uniqueClasses = []
+
         for i in range(num_instances):
             j = class_array[i] + 1
 
@@ -27,18 +26,18 @@ class MaskSelection:
             #maskBlackWhite = np.zeros_like(maskTrueFalse, dtype=np.uint8)
             #maskBlackWhite = np.where(maskTrueFalse == True, 255, maskBlackWhite)
 
-            self.maskList.append(Mask(maskTrueFalse, maskName, classDict.coco_dict[j]))
+            maskList.append(Mask(maskTrueFalse, maskName, classDict.coco_dict[j]))
             #cv2.imshow("hey:" + str(i), maskBlackWhite)
 
-            if classDict.coco_dict[j] not in self.uniqueClasses:
-                self.uniqueClasses.append(classDict.coco_dict[j])
+            if classDict.coco_dict[j] not in uniqueClasses:
+                uniqueClasses.append(classDict.coco_dict[j])
 
-        for uClass in self.uniqueClasses:
+        for uClass in uniqueClasses:
             maskGroup = MaskGroup(uClass)
-            for mask in self.maskList:
+            for mask in maskList:
                 if mask.maskClass == uClass:
                     maskGroup.AddMask(mask)
                     #print("Added mask of class: " + mask.maskClass + " to group of class: " + uClass)
-            self.classList.append(maskGroup)
+            classList.append(maskGroup)
 
-        return self.maskList, self.classList
+        return maskList, classList
