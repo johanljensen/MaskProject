@@ -3,7 +3,7 @@ import numpy as np
 
 class Blur:
 
-    def BlurFilter(self, baseImage, mask, imagePath, str, background, apply):
+    def BlurFilter(self, baseImage, mask, str, background, apply):
         if (apply):
             blur = cv2.blur(baseImage, (str, str))
             if background:

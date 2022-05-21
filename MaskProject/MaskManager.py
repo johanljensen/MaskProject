@@ -394,7 +394,7 @@ class MaskManager:
 
     def BlurChange(self, blurValue, backgroundState, filterState):
         blurImage = self.blur.BlurFilter(self.selectedImage.currentGraphic, self.selectedMask,
-                                         self.imageFullPath, blurValue, backgroundState, filterState)
+                                         blurValue, backgroundState, filterState)
         if blurImage is not None:
             cv2.imwrite(self.imageFullPath + self.blurFilename, blurImage)
             self.displayGraphicLabel.setPixmap(QPixmap(self.imageFullPath + self.blurFilename))
